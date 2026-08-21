@@ -78,7 +78,6 @@ public class AppointmentRepository {
                          statement.getGeneratedKeys()) {
 
                 if (keys.next()) {
-
                     appointment.setId(
                             keys.getLong(1)
                     );
@@ -159,6 +158,155 @@ public class AppointmentRepository {
         return appointments;
     }
 
+    public Appointment findById(Long id)
+            throws SQLException {
+
+        String sql = """
+                SELECT
+                    id,
+                    appointment_date,
+                    appointment_number,
+                    appointment_time,
+                    status,
+                    dentist_id,
+                    patient_id,
+                    treatment_id
+                FROM appointments
+                WHERE id = ?
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                if (resultSet.next()) {
+
+                    return new Appointment(
+                            resultSet.getLong("id"),
+
+                            resultSet.getDate(
+                                    "appointment_date"
+                            ).toLocalDate(),
+
+                            resultSet.getString(
+                                    "appointment_number"
+                            ),
+
+                            resultSet.getTime(
+                                    "appointment_time"
+                            ).toLocalTime(),
+
+                            resultSet.getString(
+                                    "status"
+                            ),
+
+                            resultSet.getLong(
+                                    "dentist_id"
+                            ),
+
+                            resultSet.getLong(
+                                    "patient_id"
+                            ),
+
+                            resultSet.getLong(
+                                    "treatment_id"
+                            )
+                    );
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean update(Appointment appointment)
+            throws SQLException {
+
+        String sql = """
+                UPDATE appointments
+                SET
+                    appointment_date = ?,
+                    appointment_time = ?,
+                    status = ?,
+                    dentist_id = ?,
+                    patient_id = ?,
+                    treatment_id = ?
+                WHERE id = ?
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setDate(
+                    1,
+                    Date.valueOf(
+                            appointment.getAppointmentDate()
+                    )
+            );
+
+            statement.setTime(
+                    2,
+                    Time.valueOf(
+                            appointment.getAppointmentTime()
+                    )
+            );
+
+            statement.setString(
+                    3,
+                    appointment.getStatus()
+            );
+
+            statement.setLong(
+                    4,
+                    appointment.getDentistId()
+            );
+
+            statement.setLong(
+                    5,
+                    appointment.getPatientId()
+            );
+
+            statement.setLong(
+                    6,
+                    appointment.getTreatmentId()
+            );
+
+            statement.setLong(
+                    7,
+                    appointment.getId()
+            );
+
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    public boolean delete(Long id)
+            throws SQLException {
+
+        String sql = """
+                DELETE FROM appointments
+                WHERE id = ?
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+
+            return statement.executeUpdate() > 0;
+        }
+    }
+
     public boolean existsActiveAppointment(
             Long dentistId,
             java.time.LocalDate appointmentDate,
@@ -198,12 +346,49 @@ public class AppointmentRepository {
                          statement.executeQuery()) {
 
                 if (resultSet.next()) {
-
                     return resultSet.getInt(1) > 0;
                 }
             }
         }
 
         return false;
+    }
+
+    public int getLastAppointmentNumber()
+            throws SQLException {
+
+        String sql = """
+                SELECT appointment_number
+                FROM appointments
+                WHERE appointment_number LIKE 'APT-%'
+                ORDER BY id DESC
+                LIMIT 1
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql);
+             ResultSet resultSet =
+                     statement.executeQuery()) {
+
+            if (resultSet.next()) {
+
+                String number =
+                        resultSet.getString(
+                                "appointment_number"
+                        );
+
+                try {
+                    return Integer.parseInt(
+                            number.substring(4)
+                    );
+                } catch (Exception ignored) {
+                    return 0;
+                }
+            }
+        }
+
+        return 0;
     }
 }
