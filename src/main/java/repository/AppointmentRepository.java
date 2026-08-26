@@ -288,13 +288,15 @@ public class AppointmentRepository {
         }
     }
 
-    public boolean delete(Long id)
+    public boolean cancel(Long id)
             throws SQLException {
 
         String sql = """
-                DELETE FROM appointments
-                WHERE id = ?
-                """;
+            UPDATE appointments
+            SET status = 'CANCELLED'
+            WHERE id = ?
+              AND status IN ('PENDING', 'CONFIRMED')
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();

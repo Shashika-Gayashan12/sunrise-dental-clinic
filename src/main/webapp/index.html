@@ -7,6 +7,7 @@
     <title>Sunrise Dental Clinic</title>
 
     <style>
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -15,256 +16,152 @@
         }
 
         body {
+            min-height: 100vh;
             background: #f4f7fb;
-            color: #1f2937;
-        }
 
-        header {
-            background: #0f3d56;
-            color: white;
-            padding: 20px 40px;
-        }
-
-        header h1 {
-            margin-bottom: 5px;
-        }
-
-        header p {
-            color: #c9e8e5;
-        }
-
-        nav {
-            background: white;
-            padding: 15px 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #0f3d56;
-            margin-right: 25px;
-            font-weight: bold;
-        }
-
-        nav a:hover {
-            color: #159a9c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .container {
-            padding: 40px;
-        }
-
-        .welcome {
-            margin-bottom: 30px;
-        }
-
-        .welcome h2 {
-            margin-bottom: 8px;
-        }
-
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
         }
 
         .card {
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            padding: 40px;
+
+            border-radius: 12px;
+
+            box-shadow:
+                    0 5px 20px
+                    rgba(0,0,0,0.10);
+
+            text-align: center;
         }
 
-        .card h3 {
+        .logo {
+            width: 70px;
+            height: 70px;
+
+            margin: 0 auto 20px;
+
+            background: #0f3d56;
+            color: white;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        h1 {
             color: #0f3d56;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
-        .card p {
+        .subtitle {
             color: #6b7280;
-            margin-bottom: 18px;
+            margin-bottom: 30px;
         }
 
-        .button {
-            display: inline-block;
-            padding: 10px 18px;
+        .login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .login-button {
+            display: block;
+
+            padding: 14px;
+
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            font-weight: bold;
+            font-size: 15px;
+
+            transition: 0.2s;
+        }
+
+        .admin {
+            background: #0f3d56;
+            color: white;
+        }
+
+        .admin:hover {
+            background: #0a2d40;
+        }
+
+        .user {
             background: #159a9c;
             color: white;
-            text-decoration: none;
-            border-radius: 6px;
         }
 
-        .button:hover {
+        .user:hover {
             background: #117779;
         }
 
         footer {
-            margin-top: 50px;
-            padding: 20px;
-            text-align: center;
+            margin-top: 25px;
+
             color: #6b7280;
+
+            font-size: 13px;
         }
+
     </style>
+
 </head>
 
 <body>
 
-<header>
-    <h1>Sunrise Dental Clinic</h1>
-    <p>Dental Clinic Management System</p>
-</header>
-
-<nav>
-
-    <a href="#">
-        Dashboard
-    </a>
-
-    <a href="patients">
-        Patients
-    </a>
-
-    <a href="appointments">
-        Appointments
-    </a>
-
-    <a href="dentists">
-        Dentists
-    </a>
-
-    <a href="treatments">
-        Treatments
-    </a>
-
-    <a href="bills">
-        Billing
-    </a>
-
-</nav>
-
 <div class="container">
 
-    <div class="welcome">
+    <div class="card">
 
-        <h2>
-            Welcome to Sunrise Dental Clinic
-        </h2>
+        <div class="logo">
+            SD
+        </div>
 
-        <p>
-            Manage patients, appointments, dentists, treatments
-            and billing from one place.
+        <h1>
+            Sunrise Dental Clinic
+        </h1>
+
+        <p class="subtitle">
+            Dental Clinic Management System
         </p>
 
-    </div>
+        <div class="login-buttons">
 
-    <div class="cards">
+            <a href="login?type=admin"
+               class="login-button admin">
+                Admin Login
+            </a>
 
-        <!-- Patients -->
-
-        <div class="card">
-
-            <h3>
-                Patients
-            </h3>
-
-            <p>
-                Register and manage patient information.
-            </p>
-
-            <a href="patients" class="button">
-                Manage Patients
+            <a href="login?type=user"
+               class="login-button user">
+                User Login
             </a>
 
         </div>
 
-
-        <!-- Appointments -->
-
-        <div class="card">
-
-            <h3>
-                Appointments
-            </h3>
-
-            <p>
-                Schedule and manage dental appointments.
-            </p>
-
-            <a href="appointments" class="button">
-                View Appointments
-            </a>
-
-        </div>
-
-
-        <!-- Dentists -->
-
-        <div class="card">
-
-            <h3>
-                Dentists
-            </h3>
-
-            <p>
-                Manage dentist information,
-                specialization and availability.
-            </p>
-
-            <a href="dentists" class="button">
-                Manage Dentists
-            </a>
-
-        </div>
-
-
-        <!-- Treatments -->
-
-        <div class="card">
-
-            <h3>
-                Treatments
-            </h3>
-
-            <p>
-                Manage dental treatments and treatment costs.
-            </p>
-
-            <a href="treatments" class="button">
-                Manage Treatments
-            </a>
-
-        </div>
-
-
-        <!-- Billing -->
-
-        <div class="card">
-
-            <h3>
-                Billing
-            </h3>
-
-            <p>
-                Create and manage patient bills.
-            </p>
-
-            <a href="bills" class="button">
-                Manage Billing
-            </a>
-
-        </div>
+        <footer>
+            © 2026 Sunrise Dental Clinic
+        </footer>
 
     </div>
 
 </div>
-
-<footer>
-
-    <p>
-        © 2026 Sunrise Dental Clinic Management System
-    </p>
-
-</footer>
 
 </body>
 </html>

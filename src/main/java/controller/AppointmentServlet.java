@@ -84,28 +84,38 @@ public class AppointmentServlet extends HttpServlet {
         try {
 
             /*
-             * DELETE
+             * CANCEL APPOINTMENT
              */
-            if ("delete".equalsIgnoreCase(action)) {
+            if ("cancel".equalsIgnoreCase(action)) {
+
+                String idParameter =
+                        request.getParameter("id");
+
+                if (idParameter == null
+                        || idParameter.trim().isEmpty()) {
+
+                    throw new IllegalArgumentException(
+                            "Appointment ID is required."
+                    );
+                }
 
                 Long id =
                         Long.parseLong(
-                                request.getParameter("id")
-                                        .trim()
+                                idParameter.trim()
                         );
 
-                appointmentService.deleteAppointment(id);
+                appointmentService.cancelAppointment(id);
 
                 response.sendRedirect(
                         request.getContextPath()
-                                + "/appointments"
+                                + "/appointments?filter=active"
                 );
 
                 return;
             }
 
             /*
-             * UPDATE
+             * UPDATE APPOINTMENT
              */
             if ("update".equalsIgnoreCase(action)) {
 
@@ -201,7 +211,7 @@ public class AppointmentServlet extends HttpServlet {
 
         response.sendRedirect(
                 request.getContextPath()
-                        + "/appointments"
+                        + "/appointments?filter=active"
         );
     }
 
@@ -221,6 +231,16 @@ public class AppointmentServlet extends HttpServlet {
 
         Appointment appointment =
                 appointmentService.getAppointmentById(id);
+
+        if (appointment == null) {
+
+            response.sendError(
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "Appointment not found."
+            );
+
+            return;
+        }
 
         response.setContentType(
                 "text/html;charset=UTF-8"
@@ -373,7 +393,7 @@ public class AppointmentServlet extends HttpServlet {
 
         html.append("""
                 <a class="back"
-                   href="appointments">
+                   href="appointments?filter=active">
                    ← Back to Appointments
                 </a>
 
@@ -390,7 +410,10 @@ public class AppointmentServlet extends HttpServlet {
     }
 
     /*
-     * EDIT FORM
+     * EDIT APPOINTMENT FORM
+     *
+     * Existing appointment information is loaded
+     * from the database and displayed in the form.
      */
     private void editAppointmentForm(
             HttpServletRequest request,
@@ -403,8 +426,21 @@ public class AppointmentServlet extends HttpServlet {
                                 .trim()
                 );
 
+        /*
+         * Get the existing appointment.
+         */
         Appointment appointment =
                 appointmentService.getAppointmentById(id);
+
+        if (appointment == null) {
+
+            response.sendError(
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "Appointment not found."
+            );
+
+            return;
+        }
 
         List<Patient> patients =
                 patientService.getAllPatients();
@@ -453,6 +489,15 @@ public class AppointmentServlet extends HttpServlet {
                     padding: 20px 40px;
                 }
 
+                header h1 {
+                    margin: 0 0 5px 0;
+                }
+
+                header p {
+                    margin: 0;
+                    color: #c9e8e5;
+                }
+
                 .container {
                     max-width: 800px;
                     margin: auto;
@@ -486,6 +531,7 @@ public class AppointmentServlet extends HttpServlet {
                     border: 1px solid #d1d5db;
                     border-radius: 6px;
                     font-size: 15px;
+                    box-sizing: border-box;
                 }
 
                 button {
@@ -543,6 +589,9 @@ public class AppointmentServlet extends HttpServlet {
                 .append(appointment.getId())
                 .append("\">");
 
+        /*
+         * PATIENT
+         */
         html.append("""
                 <label>Patient</label>
 
@@ -578,6 +627,9 @@ public class AppointmentServlet extends HttpServlet {
 
                 """);
 
+        /*
+         * DENTIST
+         */
         for (Dentist dentist : dentists) {
 
             html.append("<option value=\"")
@@ -608,6 +660,9 @@ public class AppointmentServlet extends HttpServlet {
 
                 """);
 
+        /*
+         * TREATMENT
+         */
         for (Treatment treatment : treatments) {
 
             html.append("<option value=\"")
@@ -637,26 +692,69 @@ public class AppointmentServlet extends HttpServlet {
                 <input type="date"
                        name="appointmentDate"
                        required
-                       value="
                 """);
 
-        html.append(appointment.getAppointmentDate())
-                .append("\">");
+        /*
+         * EXISTING DATE
+         *
+         * Example:
+         * value="2026-08-30"
+         */
+        if (appointment.getAppointmentDate() != null) {
+
+            html.append(" value=\"")
+                    .append(
+                            appointment
+                                    .getAppointmentDate()
+                                    .toString()
+                    )
+                    .append("\"");
+        }
 
         html.append("""
+                >
+
                 <label>Appointment Time</label>
 
                 <input type="time"
                        name="appointmentTime"
                        required
-                       value="
                 """);
 
-        html.append(
-                appointment.getAppointmentTime()
-        ).append("\">");
+        /*
+         * EXISTING TIME
+         *
+         * LocalTime can return:
+         *
+         * 10:30
+         *
+         * or
+         *
+         * 10:30:00
+         *
+         * HTML time input needs HH:mm.
+         */
+        if (appointment.getAppointmentTime() != null) {
+
+            String timeValue =
+                    appointment
+                            .getAppointmentTime()
+                            .toString();
+
+            if (timeValue.length() >= 5) {
+
+                timeValue =
+                        timeValue.substring(0, 5);
+            }
+
+            html.append(" value=\"")
+                    .append(timeValue)
+                    .append("\"");
+        }
 
         html.append("""
+                >
+
                 <label>Status</label>
 
                 <select name="status" required>
@@ -699,8 +797,8 @@ public class AppointmentServlet extends HttpServlet {
                 </form>
 
                 <a class="back"
-                   href="appointments">
-                   ← Cancel
+                   href="appointments?filter=active">
+                   ← Back to Appointments
                 </a>
 
                 </div>
@@ -717,6 +815,9 @@ public class AppointmentServlet extends HttpServlet {
 
     /*
      * UPDATE APPOINTMENT
+     *
+     * Existing date/time are preserved if the
+     * form does not send a new value.
      */
     private void updateAppointment(
             HttpServletRequest request,
@@ -729,44 +830,131 @@ public class AppointmentServlet extends HttpServlet {
                                 .trim()
                 );
 
+        /*
+         * First load the existing appointment.
+         *
+         * This is important because we want to
+         * preserve the existing date/time.
+         */
+        Appointment existing =
+                appointmentService.getAppointmentById(id);
+
+        if (existing == null) {
+
+            response.sendError(
+                    HttpServletResponse.SC_NOT_FOUND,
+                    "Appointment not found."
+            );
+
+            return;
+        }
+
+        /*
+         * PATIENT
+         */
         Long patientId =
                 Long.parseLong(
                         request.getParameter("patientId")
                                 .trim()
                 );
 
+        /*
+         * DENTIST
+         */
         Long dentistId =
                 Long.parseLong(
                         request.getParameter("dentistId")
                                 .trim()
                 );
 
+        /*
+         * TREATMENT
+         */
         Long treatmentId =
                 Long.parseLong(
                         request.getParameter("treatmentId")
                                 .trim()
                 );
 
-        LocalDate date =
-                LocalDate.parse(
-                        request.getParameter(
-                                "appointmentDate"
-                        ).trim()
+        /*
+         * DATE
+         *
+         * Use the new date if supplied.
+         *
+         * Otherwise keep the existing date.
+         */
+        String dateParameter =
+                request.getParameter(
+                        "appointmentDate"
                 );
 
-        LocalTime time =
-                LocalTime.parse(
-                        request.getParameter(
-                                "appointmentTime"
-                        ).trim()
+        LocalDate date;
+
+        if (dateParameter == null
+                || dateParameter.trim().isEmpty()) {
+
+            date =
+                    existing.getAppointmentDate();
+
+        } else {
+
+            date =
+                    LocalDate.parse(
+                            dateParameter.trim()
+                    );
+        }
+
+        /*
+         * TIME
+         *
+         * Use the new time if supplied.
+         *
+         * Otherwise keep the existing time.
+         */
+        String timeParameter =
+                request.getParameter(
+                        "appointmentTime"
                 );
 
+        LocalTime time;
+
+        if (timeParameter == null
+                || timeParameter.trim().isEmpty()) {
+
+            time =
+                    existing.getAppointmentTime();
+
+        } else {
+
+            time =
+                    LocalTime.parse(
+                            timeParameter.trim()
+                    );
+        }
+
+        /*
+         * STATUS
+         */
         String status =
                 request.getParameter("status");
 
-        Appointment existing =
-                appointmentService.getAppointmentById(id);
+        if (status == null
+                || status.trim().isEmpty()) {
 
+            status =
+                    existing.getStatus();
+
+        } else {
+
+            status =
+                    status.trim().toUpperCase();
+        }
+
+        /*
+         * CREATE UPDATED APPOINTMENT
+         *
+         * Appointment number stays the same.
+         */
         Appointment appointment =
                 new Appointment(
                         id,
@@ -785,12 +973,12 @@ public class AppointmentServlet extends HttpServlet {
 
         response.sendRedirect(
                 request.getContextPath()
-                        + "/appointments"
+                        + "/appointments?filter=active"
         );
     }
 
     /*
-     * SHOW ALL APPOINTMENTS
+     * SHOW APPOINTMENTS
      */
     private void showAppointments(
             HttpServletRequest request,
@@ -810,6 +998,70 @@ public class AppointmentServlet extends HttpServlet {
 
             List<Appointment> appointments =
                     appointmentService.getAllAppointments();
+
+            String filter =
+                    request.getParameter("filter");
+
+            if (filter == null
+                    || filter.trim().isEmpty()) {
+
+                filter = "active";
+            }
+
+            filter = filter.toLowerCase();
+
+            if ("active".equals(filter)) {
+
+                appointments.removeIf(
+                        appointment ->
+                                !("PENDING".equalsIgnoreCase(
+                                        appointment.getStatus())
+                                        ||
+                                        "CONFIRMED".equalsIgnoreCase(
+                                                appointment.getStatus()))
+                );
+
+            } else if ("pending".equals(filter)) {
+
+                appointments.removeIf(
+                        appointment ->
+                                !"PENDING".equalsIgnoreCase(
+                                        appointment.getStatus())
+                );
+
+            } else if ("confirmed".equals(filter)) {
+
+                appointments.removeIf(
+                        appointment ->
+                                !"CONFIRMED".equalsIgnoreCase(
+                                        appointment.getStatus())
+                );
+
+            } else if ("cancelled".equals(filter)) {
+
+                appointments.removeIf(
+                        appointment ->
+                                !"CANCELLED".equalsIgnoreCase(
+                                        appointment.getStatus())
+                );
+
+            } else if ("all".equals(filter)) {
+
+                // Keep all appointments.
+
+            } else {
+
+                filter = "active";
+
+                appointments.removeIf(
+                        appointment ->
+                                !("PENDING".equalsIgnoreCase(
+                                        appointment.getStatus())
+                                        ||
+                                        "CONFIRMED".equalsIgnoreCase(
+                                                appointment.getStatus()))
+                );
+            }
 
             String error =
                     (String) request.getAttribute("error");
@@ -938,9 +1190,24 @@ public class AppointmentServlet extends HttpServlet {
                         color: white;
                     }
 
+                    .status {
+                        font-weight: bold;
+                    }
+
                     .pending {
                         color: #b45309;
-                        font-weight: bold;
+                    }
+
+                    .confirmed {
+                        color: #166534;
+                    }
+
+                    .cancelled {
+                        color: #991b1b;
+                    }
+
+                    .completed {
+                        color: #0369a1;
                     }
 
                     .actions a {
@@ -962,11 +1229,46 @@ public class AppointmentServlet extends HttpServlet {
                         color: #166534;
                     }
 
-                    .delete {
+                    .cancel {
                         background: #fee2e2;
                         color: #991b1b;
                         border: none;
                         cursor: pointer;
+                        padding: 7px 10px;
+                        border-radius: 5px;
+                        font-size: 13px;
+                    }
+
+                    .filters {
+                        display: flex;
+                        gap: 10px;
+                        flex-wrap: wrap;
+                        margin-bottom: 20px;
+                    }
+
+                    .filter {
+                        display: inline-block;
+                        padding: 10px 16px;
+                        border-radius: 6px;
+                        background: #e5e7eb;
+                        color: #374151;
+                        text-decoration: none;
+                        font-weight: bold;
+                    }
+
+                    .filter:hover {
+                        background: #d1d5db;
+                    }
+
+                    .filter.active {
+                        background: #159a9c;
+                        color: white;
+                    }
+
+                    .empty {
+                        text-align: center;
+                        padding: 30px;
+                        color: #6b7280;
                     }
 
                     .back {
@@ -1016,6 +1318,9 @@ public class AppointmentServlet extends HttpServlet {
                         """);
             }
 
+            /*
+             * BOOK APPOINTMENT
+             */
             html.append("""
                     <div class="card">
 
@@ -1118,6 +1423,57 @@ public class AppointmentServlet extends HttpServlet {
 
                     <h2>Appointments</h2>
 
+                    <div class="filters">
+
+                    """);
+
+            /*
+             * FILTER BUTTONS
+             */
+
+            addFilterButton(
+                    html,
+                    request,
+                    "active",
+                    "Active",
+                    filter
+            );
+
+            addFilterButton(
+                    html,
+                    request,
+                    "all",
+                    "All",
+                    filter
+            );
+
+            addFilterButton(
+                    html,
+                    request,
+                    "pending",
+                    "Pending",
+                    filter
+            );
+
+            addFilterButton(
+                    html,
+                    request,
+                    "confirmed",
+                    "Confirmed",
+                    filter
+            );
+
+            addFilterButton(
+                    html,
+                    request,
+                    "cancelled",
+                    "Cancelled",
+                    filter
+            );
+
+            html.append("""
+                    </div>
+
                     <table>
 
                     <tr>
@@ -1132,100 +1488,170 @@ public class AppointmentServlet extends HttpServlet {
                     </tr>
                     """);
 
-            for (Appointment appointment :
-                    appointments) {
-
-                html.append("<tr>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getAppointmentNumber()
-                        )
-                        .append("</td>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getPatientId()
-                        )
-                        .append("</td>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getDentistId()
-                        )
-                        .append("</td>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getTreatmentId()
-                        )
-                        .append("</td>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getAppointmentDate()
-                        )
-                        .append("</td>");
-
-                html.append("<td>")
-                        .append(
-                                appointment.getAppointmentTime()
-                        )
-                        .append("</td>");
-
-                html.append("<td class=\"pending\">")
-                        .append(
-                                appointment.getStatus()
-                        )
-                        .append("</td>");
+            if (appointments.isEmpty()) {
 
                 html.append("""
-                        <td class="actions">
-                        """);
-
-                html.append("<a class=\"view\" href=\"")
-                        .append(request.getContextPath())
-                        .append("/appointments?action=view&id=")
-                        .append(appointment.getId())
-                        .append("\">View</a>");
-
-                html.append("<a class=\"edit\" href=\"")
-                        .append(request.getContextPath())
-                        .append("/appointments?action=edit&id=")
-                        .append(appointment.getId())
-                        .append("\">Edit</a>");
-
-                html.append("""
-                        <form method="post"
-                              action="appointments"
-                              style="display:inline;"
-                              onsubmit="return confirm(
-                              'Are you sure you want to delete this appointment?'
-                              );">
-
-                        <input type="hidden"
-                               name="action"
-                               value="delete">
-
-                        <input type="hidden"
-                               name="id"
-                        """);
-
-                html.append(" value=\"")
-                        .append(appointment.getId())
-                        .append("\">");
-
-                html.append("""
-                        <button type="submit"
-                                class="delete">
-                            Delete
-                        </button>
-
-                        </form>
-
-                        </td>
+                        <tr>
+                            <td colspan="8"
+                                class="empty">
+                                No appointments found.
+                            </td>
                         </tr>
                         """);
+
+            } else {
+
+                for (Appointment appointment :
+                        appointments) {
+
+                    html.append("<tr>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getAppointmentNumber()
+                            )
+                            .append("</td>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getPatientId()
+                            )
+                            .append("</td>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getDentistId()
+                            )
+                            .append("</td>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getTreatmentId()
+                            )
+                            .append("</td>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getAppointmentDate()
+                            )
+                            .append("</td>");
+
+                    html.append("<td>")
+                            .append(
+                                    appointment.getAppointmentTime()
+                            )
+                            .append("</td>");
+
+                    String status =
+                            appointment.getStatus();
+
+                    String statusClass =
+                            status == null
+                                    ? ""
+                                    : status.toLowerCase();
+
+                    html.append(
+                                    "<td class=\"status "
+                                            + statusClass
+                                            + "\">"
+                            )
+                            .append(status)
+                            .append("</td>");
+
+                    html.append("""
+                            <td class="actions">
+                            """);
+
+                    /*
+                     * VIEW
+                     */
+                    html.append(
+                                    "<a class=\"view\" href=\""
+                            )
+                            .append(
+                                    request.getContextPath()
+                            )
+                            .append(
+                                    "/appointments?action=view&id="
+                            )
+                            .append(
+                                    appointment.getId()
+                            )
+                            .append("\">View</a>");
+
+                    /*
+                     * EDIT
+                     *
+                     * Don't show Edit for cancelled
+                     * appointments.
+                     */
+                    if (!"CANCELLED".equalsIgnoreCase(
+                            status)) {
+
+                        html.append(
+                                        "<a class=\"edit\" href=\""
+                                )
+                                .append(
+                                        request.getContextPath()
+                                )
+                                .append(
+                                        "/appointments?action=edit&id="
+                                )
+                                .append(
+                                        appointment.getId()
+                                )
+                                .append(
+                                        "\">Edit</a>"
+                                );
+                    }
+
+                    /*
+                     * CANCEL
+                     *
+                     * Only PENDING and CONFIRMED
+                     * appointments can be cancelled.
+                     */
+                    if ("PENDING".equalsIgnoreCase(status)
+                            ||
+                            "CONFIRMED".equalsIgnoreCase(status)) {
+
+                        html.append("""
+                                <form method="post"
+                                      action="appointments"
+                                      style="display:inline;"
+                                      onsubmit="return confirm(
+                                      'Are you sure you want to cancel this appointment?'
+                                      );">
+
+                                <input type="hidden"
+                                       name="action"
+                                       value="cancel">
+
+                                <input type="hidden"
+                                       name="id"
+                                """);
+
+                        html.append(" value=\"")
+                                .append(
+                                        appointment.getId()
+                                )
+                                .append("\">");
+
+                        html.append("""
+                                <button type="submit"
+                                        class="cancel">
+                                    Cancel
+                                </button>
+
+                                </form>
+                                """);
+                    }
+
+                    html.append("""
+                            </td>
+                            </tr>
+                            """);
+                }
             }
 
             html.append("""
@@ -1250,5 +1676,37 @@ public class AppointmentServlet extends HttpServlet {
                     e
             );
         }
+    }
+
+    /*
+     * ADD APPOINTMENT FILTER BUTTON
+     */
+    private void addFilterButton(
+            StringBuilder html,
+            HttpServletRequest request,
+            String filterValue,
+            String label,
+            String currentFilter) {
+
+        String activeClass =
+                filterValue.equalsIgnoreCase(currentFilter)
+                        ? " active"
+                        : "";
+
+        html.append(
+                        "<a class=\"filter"
+                                + activeClass
+                                + "\" href=\""
+                )
+                .append(
+                        request.getContextPath()
+                )
+                .append(
+                        "/appointments?filter="
+                )
+                .append(filterValue)
+                .append("\">")
+                .append(label)
+                .append("</a>");
     }
 }

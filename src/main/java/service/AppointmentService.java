@@ -186,11 +186,16 @@ public class AppointmentService {
         return repository.save(appointment);
     }
 
+
+    /*
+     * Get all appointments.
+     */
     public List<Appointment> getAllAppointments()
             throws SQLException {
 
         return repository.findAll();
     }
+
 
     /*
      * View one appointment.
@@ -215,6 +220,7 @@ public class AppointmentService {
 
         return appointment;
     }
+
 
     /*
      * Update appointment.
@@ -274,10 +280,10 @@ public class AppointmentService {
         }
 
         /*
-         * Check whether another appointment already
-         * uses the same dentist, date and time.
+         * Check whether another active appointment
+         * already uses the same dentist, date and time.
          *
-         * We ignore the current appointment itself.
+         * CANCELLED appointments are ignored.
          */
         List<Appointment> appointments =
                 repository.findAll();
@@ -345,10 +351,14 @@ public class AppointmentService {
         return repository.update(appointment);
     }
 
+
     /*
-     * Delete appointment.
+     * Cancel appointment.
+     *
+     * The appointment is NOT physically deleted.
+     * Its status becomes CANCELLED.
      */
-    public boolean deleteAppointment(Long id)
+    public boolean cancelAppointment(Long id)
             throws SQLException {
 
         if (id == null) {
@@ -366,8 +376,25 @@ public class AppointmentService {
             );
         }
 
-        return repository.delete(id);
+        if ("CANCELLED".equalsIgnoreCase(
+                appointment.getStatus())) {
+
+            throw new IllegalArgumentException(
+                    "This appointment is already cancelled."
+            );
+        }
+
+        if ("COMPLETED".equalsIgnoreCase(
+                appointment.getStatus())) {
+
+            throw new IllegalArgumentException(
+                    "A completed appointment cannot be cancelled."
+            );
+        }
+
+        return repository.cancel(id);
     }
+
 
     /*
      * Generate unique appointment number.
