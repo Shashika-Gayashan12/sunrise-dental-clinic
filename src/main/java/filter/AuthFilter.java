@@ -30,8 +30,22 @@ public class AuthFilter implements Filter {
         HttpServletResponse httpResponse =
                 (HttpServletResponse) response;
 
+
+        /*
+         * ============================
+         * CONTEXT PATH
+         * ============================
+         */
+
         String contextPath =
                 httpRequest.getContextPath();
+
+
+        /*
+         * ============================
+         * REQUEST PATH
+         * ============================
+         */
 
         String requestURI =
                 httpRequest.getRequestURI();
@@ -41,18 +55,24 @@ public class AuthFilter implements Filter {
                         contextPath.length()
                 );
 
+
         /*
-         * Public pages.
+         * ============================
+         * PUBLIC PAGES
+         * ============================
          *
-         * These pages can be accessed
-         * without logging in.
+         * These pages do NOT require
+         * a logged-in user.
          */
-        if (path.equals("/login")
+
+        if (path.equals("/")
+                || path.equals("/index.html")
+                || path.equals("/login")
                 || path.equals("/register")
-                || path.equals("/")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
-                || path.startsWith("/images/")) {
+                || path.startsWith("/images/")
+                || path.startsWith("/favicon.ico")) {
 
             chain.doFilter(
                     request,
@@ -62,11 +82,26 @@ public class AuthFilter implements Filter {
             return;
         }
 
+
         /*
-         * Check session.
+         * ============================
+         * GET EXISTING SESSION
+         * ============================
+         *
+         * IMPORTANT:
+         * false means:
+         * do NOT create a new session.
          */
+
         HttpSession session =
                 httpRequest.getSession(false);
+
+
+        /*
+         * ============================
+         * GET LOGGED-IN USER
+         * ============================
+         */
 
         User loggedInUser = null;
 
@@ -84,9 +119,13 @@ public class AuthFilter implements Filter {
             }
         }
 
+
         /*
-         * User is not logged in.
+         * ============================
+         * USER NOT LOGGED IN
+         * ============================
          */
+
         if (loggedInUser == null) {
 
             httpResponse.sendRedirect(
@@ -96,9 +135,16 @@ public class AuthFilter implements Filter {
             return;
         }
 
+
         /*
-         * User must still be ACTIVE.
+         * ============================
+         * CHECK USER STATUS
+         * ============================
+         *
+         * Only ACTIVE users can use
+         * the system.
          */
+
         if (!"ACTIVE".equalsIgnoreCase(
                 loggedInUser.getStatus())) {
 
@@ -111,9 +157,43 @@ public class AuthFilter implements Filter {
             return;
         }
 
+
         /*
-         * Continue to requested page.
+         * ============================
+         * KEEP SESSION INFORMATION
+         * ============================
+         *
+         * Make sure these values remain
+         * available throughout the system.
          */
+
+        session.setAttribute(
+                "loggedInUser",
+                loggedInUser
+        );
+
+        session.setAttribute(
+                "userId",
+                loggedInUser.getId()
+        );
+
+        session.setAttribute(
+                "username",
+                loggedInUser.getUsername()
+        );
+
+        session.setAttribute(
+                "role",
+                loggedInUser.getRole()
+        );
+
+
+        /*
+         * ============================
+         * ALLOW REQUEST
+         * ============================
+         */
+
         chain.doFilter(
                 request,
                 response

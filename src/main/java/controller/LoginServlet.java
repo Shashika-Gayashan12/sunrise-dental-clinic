@@ -20,9 +20,9 @@ public class LoginServlet extends HttpServlet {
             new UserService();
 
     /*
-     * ============================
+     * ============================================================
      * SHOW LOGIN PAGE
-     * ============================
+     * ============================================================
      */
     @Override
     protected void doGet(
@@ -62,8 +62,7 @@ public class LoginServlet extends HttpServlet {
         }
 
         /*
-         * If /login is opened directly,
-         * show normal User Login.
+         * Default = User Login
          */
         showLoginPage(
                 request,
@@ -74,9 +73,9 @@ public class LoginServlet extends HttpServlet {
 
 
     /*
-     * ============================
+     * ============================================================
      * PROCESS LOGIN
-     * ============================
+     * ============================================================
      */
     @Override
     protected void doPost(
@@ -116,12 +115,9 @@ public class LoginServlet extends HttpServlet {
                     );
 
             /*
-             * ============================
-             * CHECK LOGIN TYPE
-             * ============================
-             *
-             * Admin Login button can only
-             * be used by ADMIN.
+             * ====================================================
+             * ADMIN LOGIN CHECK
+             * ====================================================
              */
             if ("ADMIN".equalsIgnoreCase(
                     loginType)) {
@@ -131,7 +127,7 @@ public class LoginServlet extends HttpServlet {
 
                     request.setAttribute(
                             "error",
-                            "This is not an admin account."
+                            "This account does not have administrator access."
                     );
 
                     showLoginPage(
@@ -144,9 +140,11 @@ public class LoginServlet extends HttpServlet {
                 }
             }
 
+
             /*
-             * User Login button should not
-             * be used by ADMIN.
+             * ====================================================
+             * USER LOGIN CHECK
+             * ====================================================
              */
             if ("USER".equalsIgnoreCase(
                     loginType)) {
@@ -156,7 +154,7 @@ public class LoginServlet extends HttpServlet {
 
                     request.setAttribute(
                             "error",
-                            "Please use Admin Login for the admin account."
+                            "Please use Admin Login for the administrator account."
                     );
 
                     showLoginPage(
@@ -169,10 +167,11 @@ public class LoginServlet extends HttpServlet {
                 }
             }
 
+
             /*
-             * ============================
+             * ====================================================
              * LOGIN SUCCESS
-             * ============================
+             * ====================================================
              */
 
             HttpSession session =
@@ -199,7 +198,7 @@ public class LoginServlet extends HttpServlet {
             );
 
             /*
-             * Go to Dashboard.
+             * Redirect to Dashboard.
              */
             response.sendRedirect(
                     request.getContextPath()
@@ -233,9 +232,9 @@ public class LoginServlet extends HttpServlet {
 
 
     /*
-     * ============================
+     * ============================================================
      * LOGIN PAGE
-     * ============================
+     * ============================================================
      */
     private void showLoginPage(
             HttpServletRequest request,
@@ -252,34 +251,68 @@ public class LoginServlet extends HttpServlet {
                         "error"
                 );
 
+        boolean isAdmin =
+                "ADMIN".equalsIgnoreCase(
+                        loginType
+                );
+
+        /*
+         * Page information.
+         */
         String title;
 
         String subtitle;
 
-        if ("ADMIN".equalsIgnoreCase(
-                loginType)) {
+        String welcomeTitle;
 
-            title = "Admin Login";
+        String welcomeText;
+
+        String buttonText;
+
+        if (isAdmin) {
+
+            title =
+                    "Administrator Login";
 
             subtitle =
-                    "Login to the administration panel";
+                    "Secure access to the administration panel";
+
+            welcomeTitle =
+                    "Manage Your Clinic";
+
+            welcomeText =
+                    "Access patients, dentists, appointments, treatments and billing from one secure dashboard.";
+
+            buttonText =
+                    "Sign In as Administrator";
 
         } else {
 
-            title = "User Login";
+            title =
+                    "Staff Login";
 
             subtitle =
-                    "Login to the dental clinic system";
+                    "Sign in to access the dental clinic system";
+
+            welcomeTitle =
+                    "Welcome to Sunrise";
+
+            welcomeText =
+                    "A simple and secure way to manage your daily dental clinic operations.";
+
+            buttonText =
+                    "Sign In";
         }
+
 
         StringBuilder html =
                 new StringBuilder();
 
 
         /*
-         * ============================
+         * ============================================================
          * HTML START
-         * ============================
+         * ============================================================
          */
 
         html.append("""
@@ -308,18 +341,34 @@ public class LoginServlet extends HttpServlet {
 
                 <style>
 
+                /* ==================================================
+                   GLOBAL
+                   ================================================== */
+
                 * {
                     box-sizing: border-box;
                     margin: 0;
                     padding: 0;
-                    font-family: Arial, sans-serif;
                 }
 
                 body {
 
                     min-height: 100vh;
 
-                    background: #f4f7fb;
+                    font-family:
+                        "Segoe UI",
+                        Arial,
+                        sans-serif;
+
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #eef8f8 0%,
+                            #f5f8fc 50%,
+                            #eaf3f7 100%
+                        );
+
+                    color: #172b3a;
 
                     display: flex;
 
@@ -327,43 +376,423 @@ public class LoginServlet extends HttpServlet {
 
                     justify-content: center;
 
-                    padding: 20px;
+                    padding: 30px;
                 }
 
-                .container {
+
+                /* ==================================================
+                   MAIN LOGIN WRAPPER
+                   ================================================== */
+
+                .login-wrapper {
 
                     width: 100%;
 
-                    max-width: 430px;
-                }
+                    max-width: 1050px;
 
-                .card {
+                    min-height: 650px;
 
-                    background: white;
+                    background: #ffffff;
 
-                    padding: 40px;
+                    border-radius: 24px;
 
-                    border-radius: 12px;
+                    overflow: hidden;
+
+                    display: grid;
+
+                    grid-template-columns:
+                        45% 55%;
 
                     box-shadow:
-                        0 5px 20px
-                        rgba(0,0,0,0.10);
+                        0 25px 70px
+                        rgba(15, 61, 86, 0.15);
+
+                    border:
+                        1px solid
+                        rgba(255,255,255,0.8);
                 }
 
-                .logo {
 
-                    width: 70px;
+                /* ==================================================
+                   BRANDING PANEL
+                   ================================================== */
 
-                    height: 70px;
+                .branding-panel {
+
+                    position: relative;
+
+                    background:
+                        linear-gradient(
+                            145deg,
+                            #0b354d,
+                            #0f5364 55%,
+                            #159a9c
+                        );
+
+                    color: white;
+
+                    padding: 55px 45px;
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    justify-content: space-between;
+
+                    overflow: hidden;
+                }
+
+
+                .branding-panel::before {
+
+                    content: "";
+
+                    position: absolute;
+
+                    width: 300px;
+
+                    height: 300px;
+
+                    border-radius: 50%;
+
+                    background:
+                        rgba(255,255,255,0.06);
+
+                    top: -120px;
+
+                    right: -100px;
+                }
+
+
+                .branding-panel::after {
+
+                    content: "";
+
+                    position: absolute;
+
+                    width: 220px;
+
+                    height: 220px;
+
+                    border-radius: 50%;
+
+                    background:
+                        rgba(255,255,255,0.05);
+
+                    bottom: -100px;
+
+                    left: -80px;
+                }
+
+
+                .brand-content,
+                .brand-bottom {
+
+                    position: relative;
+
+                    z-index: 2;
+                }
+
+
+                /* ==================================================
+                   LOGO
+                   ================================================== */
+
+                .brand-logo {
+
+                    width: 74px;
+
+                    height: 74px;
+
+                    border-radius: 20px;
+
+                    background:
+                        rgba(255,255,255,0.14);
+
+                    border:
+                        1px solid
+                        rgba(255,255,255,0.22);
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    font-size: 23px;
+
+                    font-weight: 800;
+
+                    letter-spacing: 1px;
+
+                    margin-bottom: 30px;
+
+                    backdrop-filter: blur(10px);
+                }
+
+
+                .brand-name {
+
+                    font-size: 29px;
+
+                    font-weight: 750;
+
+                    letter-spacing: -0.5px;
+
+                    margin-bottom: 15px;
+
+                    line-height: 1.2;
+                }
+
+
+                .brand-tagline {
+
+                    color:
+                        rgba(255,255,255,0.78);
+
+                    font-size: 15px;
+
+                    line-height: 1.7;
+
+                    max-width: 360px;
+                }
+
+
+                /* ==================================================
+                   FEATURES
+                   ================================================== */
+
+                .feature-list {
+
+                    margin-top: 45px;
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    gap: 17px;
+                }
+
+
+                .feature {
+
+                    display: flex;
+
+                    align-items: center;
+
+                    gap: 13px;
+
+                    color:
+                        rgba(255,255,255,0.88);
+
+                    font-size: 14px;
+                }
+
+
+                .feature-icon {
+
+                    width: 34px;
+
+                    height: 34px;
+
+                    border-radius: 10px;
+
+                    background:
+                        rgba(255,255,255,0.12);
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    font-size: 15px;
+                }
+
+
+                .brand-bottom {
+
+                    color:
+                        rgba(255,255,255,0.55);
+
+                    font-size: 12px;
+
+                    line-height: 1.6;
+                }
+
+
+                /* ==================================================
+                   LOGIN PANEL
+                   ================================================== */
+
+                .login-panel {
+
+                    padding:
+                        55px 65px;
+
+                    display: flex;
+
+                    flex-direction: column;
+
+                    justify-content: center;
+                }
+
+
+                .mobile-brand {
+
+                    display: none;
+
+                    text-align: center;
+
+                    margin-bottom: 30px;
+                }
+
+
+                .mobile-logo {
+
+                    width: 64px;
+
+                    height: 64px;
 
                     margin:
-                        0 auto 20px;
+                        0 auto 15px;
+
+                    border-radius: 18px;
 
                     background: #0f3d56;
 
                     color: white;
 
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    font-weight: 800;
+
+                    font-size: 20px;
+                }
+
+
+                /* ==================================================
+                   LOGIN HEADER
+                   ================================================== */
+
+                .login-header {
+
+                    margin-bottom: 32px;
+                }
+
+
+                .login-badge {
+
+                    display: inline-flex;
+
+                    align-items: center;
+
+                    gap: 7px;
+
+                    padding:
+                        7px 11px;
+
+                    background: #e8f7f7;
+
+                    color: #117779;
+
+                    border-radius: 30px;
+
+                    font-size: 12px;
+
+                    font-weight: 700;
+
+                    margin-bottom: 15px;
+                }
+
+
+                .badge-dot {
+
+                    width: 7px;
+
+                    height: 7px;
+
+                    background: #159a9c;
+
                     border-radius: 50%;
+                }
+
+
+                .login-title {
+
+                    color: #102f42;
+
+                    font-size: 30px;
+
+                    font-weight: 750;
+
+                    letter-spacing: -0.7px;
+
+                    margin-bottom: 9px;
+                }
+
+
+                .login-subtitle {
+
+                    color: #718096;
+
+                    font-size: 14px;
+
+                    line-height: 1.6;
+                }
+
+
+                /* ==================================================
+                   ERROR
+                   ================================================== */
+
+                .error {
+
+                    display: flex;
+
+                    align-items: flex-start;
+
+                    gap: 10px;
+
+                    background: #fff3f3;
+
+                    color: #a12a2a;
+
+                    border:
+                        1px solid
+                        #ffd5d5;
+
+                    padding: 13px 14px;
+
+                    border-radius: 10px;
+
+                    margin-bottom: 22px;
+
+                    font-size: 13px;
+
+                    line-height: 1.5;
+                }
+
+
+                .error-icon {
+
+                    flex-shrink: 0;
+
+                    font-weight: bold;
+
+                    width: 20px;
+
+                    height: 20px;
+
+                    border-radius: 50%;
+
+                    background: #e05252;
+
+                    color: white;
 
                     display: flex;
 
@@ -371,190 +800,551 @@ public class LoginServlet extends HttpServlet {
 
                     justify-content: center;
 
-                    font-size: 27px;
-
-                    font-weight: bold;
+                    font-size: 12px;
                 }
 
-                .clinic-name {
 
-                    text-align: center;
+                /* ==================================================
+                   FORM
+                   ================================================== */
 
-                    color: #0f3d56;
+                .form-group {
 
-                    font-size: 26px;
-
-                    margin-bottom: 8px;
+                    margin-bottom: 21px;
                 }
 
-                .subtitle {
-
-                    text-align: center;
-
-                    color: #6b7280;
-
-                    margin-bottom: 25px;
-
-                    line-height: 1.5;
-                }
-
-                .login-title {
-
-                    text-align: center;
-
-                    color: #0f3d56;
-
-                    margin-bottom: 25px;
-                }
 
                 label {
 
                     display: block;
 
-                    margin-top: 15px;
+                    color: #263b4a;
 
-                    margin-bottom: 7px;
+                    font-size: 13px;
 
-                    font-weight: bold;
+                    font-weight: 700;
 
-                    color: #1f2937;
+                    margin-bottom: 8px;
                 }
+
+
+                .input-wrapper {
+
+                    position: relative;
+                }
+
+
+                .input-icon {
+
+                    position: absolute;
+
+                    left: 15px;
+
+                    top: 50%;
+
+                    transform:
+                        translateY(-50%);
+
+                    color: #8a9aaa;
+
+                    font-size: 15px;
+
+                    pointer-events: none;
+                }
+
 
                 input {
 
                     width: 100%;
 
-                    padding: 12px;
+                    height: 52px;
+
+                    padding:
+                        0 45px;
 
                     border:
-                        1px solid #d1d5db;
+                        1px solid
+                        #dce3e8;
 
-                    border-radius: 6px;
+                    border-radius: 11px;
 
-                    font-size: 15px;
-                }
+                    background: #fbfcfd;
 
-                input:focus {
+                    color: #172b3a;
+
+                    font-size: 14px;
 
                     outline: none;
 
-                    border-color: #159a9c;
-
-                    box-shadow:
-                        0 0 0 2px
-                        rgba(21,154,156,0.12);
+                    transition:
+                        all 0.2s ease;
                 }
 
-                button {
 
-                    width: 100%;
+                input::placeholder {
 
-                    margin-top: 25px;
+                    color: #a6b1ba;
+                }
 
-                    padding: 13px;
+
+                input:hover {
+
+                    border-color:
+                        #bdcbd3;
+
+                    background: #ffffff;
+                }
+
+
+                input:focus {
+
+                    border-color:
+                        #159a9c;
+
+                    background: #ffffff;
+
+                    box-shadow:
+                        0 0 0 4px
+                        rgba(21,154,156,0.10);
+                }
+
+
+                /* ==================================================
+                   PASSWORD TOGGLE
+                   ================================================== */
+
+                .password-toggle {
+
+                    position: absolute;
+
+                    right: 14px;
+
+                    top: 50%;
+
+                    transform:
+                        translateY(-50%);
 
                     border: none;
 
-                    border-radius: 6px;
+                    background: transparent;
 
-                    background: #159a9c;
+                    color: #81909c;
+
+                    cursor: pointer;
+
+                    padding: 5px;
+
+                    font-size: 14px;
+                }
+
+
+                .password-toggle:hover {
+
+                    color: #159a9c;
+                }
+
+
+                /* ==================================================
+                   LOGIN BUTTON
+                   ================================================== */
+
+                .login-button {
+
+                    width: 100%;
+
+                    height: 53px;
+
+                    border: none;
+
+                    border-radius: 11px;
+
+                    background:
+                        linear-gradient(
+                            135deg,
+                            #159a9c,
+                            #117779
+                        );
 
                     color: white;
 
-                    font-size: 16px;
+                    font-size: 14px;
 
-                    font-weight: bold;
+                    font-weight: 750;
+
+                    letter-spacing: 0.1px;
 
                     cursor: pointer;
+
+                    margin-top: 5px;
+
+                    box-shadow:
+                        0 8px 18px
+                        rgba(21,154,156,0.20);
+
+                    transition:
+                        all 0.2s ease;
                 }
 
-                button:hover {
 
-                    background: #117779;
+                .login-button:hover {
+
+                    transform:
+                        translateY(-1px);
+
+                    box-shadow:
+                        0 11px 23px
+                        rgba(21,154,156,0.28);
                 }
 
-                .error {
 
-                    background: #fee2e2;
+                .login-button:active {
 
-                    color: #991b1b;
-
-                    padding: 12px;
-
-                    border-radius: 6px;
-
-                    margin-bottom: 20px;
-
-                    text-align: center;
-
-                    line-height: 1.4;
+                    transform:
+                        translateY(0);
                 }
+
+
+                /* ==================================================
+                   SWITCH LOGIN
+                   ================================================== */
 
                 .switch-login {
 
                     text-align: center;
 
-                    margin-top: 20px;
+                    margin-top: 24px;
 
-                    color: #6b7280;
+                    color: #87939d;
 
-                    line-height: 1.8;
+                    font-size: 13px;
                 }
+
 
                 .switch-login a {
 
-                    color: #159a9c;
+                    display: inline-block;
 
-                    font-weight: bold;
+                    margin-top: 7px;
+
+                    color: #117779;
+
+                    font-weight: 700;
 
                     text-decoration: none;
                 }
+
 
                 .switch-login a:hover {
 
                     text-decoration: underline;
                 }
 
-                .back {
+
+                /* ==================================================
+                   BACK TO HOME
+                   ================================================== */
+
+                .back-home {
 
                     text-align: center;
 
-                    margin-top: 15px;
+                    margin-top: 22px;
+
+                    padding-top: 20px;
+
+                    border-top:
+                        1px solid
+                        #edf0f2;
                 }
 
-                .back a {
 
-                    color: #0f3d56;
+                .back-home a {
+
+                    color: #718096;
 
                     text-decoration: none;
 
-                    font-size: 14px;
+                    font-size: 12px;
+
+                    font-weight: 600;
+
+                    transition: color 0.2s;
                 }
 
-                .back a:hover {
 
-                    text-decoration: underline;
+                .back-home a:hover {
+
+                    color: #159a9c;
+                }
+
+
+                /* ==================================================
+                   SECURITY TEXT
+                   ================================================== */
+
+                .security {
+
+                    display: flex;
+
+                    align-items: center;
+
+                    justify-content: center;
+
+                    gap: 7px;
+
+                    margin-top: 18px;
+
+                    color: #a0aab2;
+
+                    font-size: 11px;
+                }
+
+
+                .security-icon {
+
+                    font-size: 12px;
+                }
+
+
+                /* ==================================================
+                   MOBILE
+                   ================================================== */
+
+                @media (max-width: 850px) {
+
+                    body {
+                        padding: 20px;
+                    }
+
+                    .login-wrapper {
+
+                        max-width: 520px;
+
+                        min-height: auto;
+
+                        display: block;
+
+                        border-radius: 20px;
+                    }
+
+                    .branding-panel {
+
+                        display: none;
+                    }
+
+                    .login-panel {
+
+                        padding:
+                            40px 35px;
+                    }
+
+                    .mobile-brand {
+
+                        display: block;
+                    }
+                }
+
+
+                @media (max-width: 480px) {
+
+                    body {
+                        padding: 12px;
+                    }
+
+                    .login-wrapper {
+                        border-radius: 16px;
+                    }
+
+                    .login-panel {
+                        padding:
+                            32px 22px;
+                    }
+
+                    .login-title {
+                        font-size: 26px;
+                    }
+
+                    .login-subtitle {
+                        font-size: 13px;
+                    }
+
+                    input {
+                        height: 50px;
+                    }
+
+                    .login-button {
+                        height: 51px;
+                    }
                 }
 
                 </style>
 
                 </head>
 
+
                 <body>
 
-                <div class="container">
 
-                <div class="card">
+                <div class="login-wrapper">
 
-                <div class="logo">
-                    SD
+
+                <!-- =================================================
+                     LEFT BRANDING PANEL
+                     ================================================= -->
+
+                <div class="branding-panel">
+
+                    <div class="brand-content">
+
+                        <div class="brand-logo">
+                            SD
+                        </div>
+
+                        <div class="brand-name">
+                            Sunrise Dental Clinic
+                        </div>
+
+                        <div class="brand-tagline">
+                """);
+
+        html.append(
+                escapeHtml(welcomeText)
+        );
+
+        html.append("""
+                        </div>
+
+
+                        <div class="feature-list">
+
+                            <div class="feature">
+
+                                <div class="feature-icon">
+                                    +
+                                </div>
+
+                                <span>
+                                    Patient Management
+                                </span>
+
+                            </div>
+
+
+                            <div class="feature">
+
+                                <div class="feature-icon">
+                                    +
+                                </div>
+
+                                <span>
+                                    Appointment Management
+                                </span>
+
+                            </div>
+
+
+                            <div class="feature">
+
+                                <div class="feature-icon">
+                                    +
+                                </div>
+
+                                <span>
+                                    Treatment & Billing
+                                </span>
+
+                            </div>
+
+
+                            <div class="feature">
+
+                                <div class="feature-icon">
+                                    +
+                                </div>
+
+                                <span>
+                                    Secure Clinic Records
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="brand-bottom">
+
+                        Sunrise Dental Clinic<br>
+
+                        Patient Management System
+
+                    </div>
+
                 </div>
 
-                <h1 class="clinic-name">
-                    Sunrise Dental Clinic
-                </h1>
 
-                <p class="subtitle">
+                <!-- =================================================
+                     LOGIN PANEL
+                     ================================================= -->
+
+                <div class="login-panel">
+
+
+                    <!-- Mobile Branding -->
+
+                    <div class="mobile-brand">
+
+                        <div class="mobile-logo">
+                            SD
+                        </div>
+
+                        <strong>
+                            Sunrise Dental Clinic
+                        </strong>
+
+                    </div>
+
+
+                    <!-- Login Header -->
+
+                    <div class="login-header">
+
+                        <div class="login-badge">
+
+                            <span class="badge-dot"></span>
+
+                """);
+
+        if (isAdmin) {
+
+            html.append("""
+                            Administrator Access
+                    """);
+
+        } else {
+
+            html.append("""
+                            Staff Access
+                    """);
+        }
+
+        html.append("""
+                        </div>
+
+
+                        <h1 class="login-title">
+                """);
+
+        html.append(
+                escapeHtml(welcomeTitle)
+        );
+
+        html.append("""
+                        </h1>
+
+
+                        <p class="login-subtitle">
                 """);
 
         html.append(
@@ -562,24 +1352,16 @@ public class LoginServlet extends HttpServlet {
         );
 
         html.append("""
-                </p>
+                        </p>
 
-                <h2 class="login-title">
-                """);
-
-        html.append(
-                escapeHtml(title)
-        );
-
-        html.append("""
-                </h2>
+                    </div>
                 """);
 
 
         /*
-         * ============================
+         * ============================================================
          * ERROR MESSAGE
-         * ============================
+         * ============================================================
          */
 
         if (error != null &&
@@ -587,6 +1369,12 @@ public class LoginServlet extends HttpServlet {
 
             html.append("""
                     <div class="error">
+
+                        <div class="error-icon">
+                            !
+                        </div>
+
+                        <div>
                     """);
 
             html.append(
@@ -594,24 +1382,27 @@ public class LoginServlet extends HttpServlet {
             );
 
             html.append("""
+                        </div>
+
                     </div>
                     """);
         }
 
 
         /*
-         * ============================
+         * ============================================================
          * LOGIN FORM
-         * ============================
+         * ============================================================
          */
 
         html.append("""
-                <form method="post"
-                      action="login">
+                    <form method="post"
+                          action="login">
 
-                    <input type="hidden"
-                           name="type"
-                           value="
+                        <input
+                            type="hidden"
+                            name="type"
+                            value="
                 """);
 
         html.append(
@@ -619,62 +1410,108 @@ public class LoginServlet extends HttpServlet {
         );
 
         html.append("""
-                    ">
+                        ">
 
-                    <label>
-                        Username
-                    </label>
 
-                    <input
-                        type="text"
-                        name="username"
-                        placeholder="Enter username"
-                        autocomplete="username"
-                        required>
+                        <!-- USERNAME -->
 
-                    <label>
-                        Password
-                    </label>
+                        <div class="form-group">
 
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Enter password"
-                        autocomplete="current-password"
-                        required>
+                            <label for="username">
+                                Username
+                            </label>
 
-                    <button type="submit">
+                            <div class="input-wrapper">
+
+                                <span class="input-icon">
+                                    @
+                                </span>
+
+                                <input
+                                    type="text"
+                                    id="username"
+                                    name="username"
+                                    placeholder="Enter your username"
+                                    autocomplete="username"
+                                    required>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PASSWORD -->
+
+                        <div class="form-group">
+
+                            <label for="password">
+                                Password
+                            </label>
+
+                            <div class="input-wrapper">
+
+                                <span class="input-icon">
+                                    *
+                                </span>
+
+                                <input
+                                    type="password"
+                                    id="password"
+                                    name="password"
+                                    placeholder="Enter your password"
+                                    autocomplete="current-password"
+                                    required>
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    onclick="togglePassword()"
+                                    id="passwordToggle">
+
+                                    Show
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- LOGIN BUTTON -->
+
+                        <button
+                            type="submit"
+                            class="login-button">
                 """);
 
         html.append(
-                escapeHtml(title)
+                escapeHtml(buttonText)
         );
 
         html.append("""
-                    </button>
+                        </button>
 
-                </form>
+                    </form>
                 """);
 
 
         /*
-         * ============================
+         * ============================================================
          * SWITCH LOGIN
-         * ============================
+         * ============================================================
          */
 
-        if ("ADMIN".equalsIgnoreCase(
-                loginType)) {
+        if (isAdmin) {
 
             html.append("""
                     <div class="switch-login">
 
-                        Are you a normal user?
+                        Need staff access?
 
                         <br>
 
                         <a href="login?type=user">
-                            User Login
+                            Sign in as Staff
                         </a>
 
                     </div>
@@ -690,7 +1527,7 @@ public class LoginServlet extends HttpServlet {
                         <br>
 
                         <a href="login?type=admin">
-                            Admin Login
+                            Administrator Login
                         </a>
 
                     </div>
@@ -699,23 +1536,69 @@ public class LoginServlet extends HttpServlet {
 
 
         /*
-         * ============================
+         * ============================================================
          * BACK TO HOME
-         * ============================
+         * ============================================================
          */
 
         html.append("""
-                <div class="back">
+                    <div class="back-home">
 
-                    <a href="./">
-                        ← Back to Home
-                    </a>
+                        <a href="./">
+                            ← Back to Home
+                        </a>
+
+                    </div>
+
+
+                    <div class="security">
+
+                        <span class="security-icon">
+                            ●
+                        </span>
+
+                        Secure clinic system
+
+                    </div>
+
 
                 </div>
 
                 </div>
 
-                </div>
+
+                <!-- =================================================
+                     PASSWORD SCRIPT
+                     ================================================= -->
+
+                <script>
+
+                function togglePassword() {
+
+                    const password =
+                        document.getElementById("password");
+
+                    const button =
+                        document.getElementById(
+                            "passwordToggle"
+                        );
+
+                    if (password.type === "password") {
+
+                        password.type = "text";
+
+                        button.innerText = "Hide";
+
+                    } else {
+
+                        password.type = "password";
+
+                        button.innerText = "Show";
+                    }
+                }
+
+                </script>
+
 
                 </body>
 
@@ -724,8 +1607,11 @@ public class LoginServlet extends HttpServlet {
 
 
         /*
-         * Send HTML.
+         * ============================================================
+         * SEND HTML
+         * ============================================================
          */
+
         response.getWriter()
                 .write(
                         html.toString()
@@ -734,9 +1620,9 @@ public class LoginServlet extends HttpServlet {
 
 
     /*
-     * ============================
+     * ============================================================
      * HTML ESCAPE
-     * ============================
+     * ============================================================
      */
     private String escapeHtml(
             String text) {

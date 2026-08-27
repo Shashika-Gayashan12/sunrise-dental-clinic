@@ -37,6 +37,11 @@ public class AppointmentServlet extends HttpServlet {
     private final TreatmentService treatmentService =
             new TreatmentService();
 
+
+    // =========================================================
+    // GET
+    // =========================================================
+
     @Override
     protected void doGet(
             HttpServletRequest request,
@@ -48,13 +53,11 @@ public class AppointmentServlet extends HttpServlet {
         try {
 
             if ("view".equalsIgnoreCase(action)) {
-
                 viewAppointment(request, response);
                 return;
             }
 
             if ("edit".equalsIgnoreCase(action)) {
-
                 editAppointmentForm(request, response);
                 return;
             }
@@ -70,6 +73,11 @@ public class AppointmentServlet extends HttpServlet {
         }
     }
 
+
+    // =========================================================
+    // POST
+    // =========================================================
+
     @Override
     protected void doPost(
             HttpServletRequest request,
@@ -78,31 +86,41 @@ public class AppointmentServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
 
-        String action =
-                request.getParameter("action");
+        String action = request.getParameter("action");
 
         try {
 
-            /*
-             * CANCEL APPOINTMENT
-             */
+            // -------------------------------------------------
+            // CANCEL
+            // -------------------------------------------------
+
             if ("cancel".equalsIgnoreCase(action)) {
 
                 String idParameter =
                         request.getParameter("id");
 
-                if (idParameter == null
-                        || idParameter.trim().isEmpty()) {
+                if (idParameter == null ||
+                        idParameter.trim().isEmpty()) {
 
                     throw new IllegalArgumentException(
                             "Appointment ID is required."
                     );
                 }
 
-                Long id =
-                        Long.parseLong(
-                                idParameter.trim()
-                        );
+                Long id;
+
+                try {
+
+                    id = Long.parseLong(
+                            idParameter.trim()
+                    );
+
+                } catch (NumberFormatException e) {
+
+                    throw new IllegalArgumentException(
+                            "Invalid appointment ID."
+                    );
+                }
 
                 appointmentService.cancelAppointment(id);
 
@@ -114,19 +132,22 @@ public class AppointmentServlet extends HttpServlet {
                 return;
             }
 
-            /*
-             * UPDATE APPOINTMENT
-             */
+
+            // -------------------------------------------------
+            // UPDATE
+            // -------------------------------------------------
+
             if ("update".equalsIgnoreCase(action)) {
 
                 updateAppointment(request, response);
-
                 return;
             }
 
-            /*
-             * CREATE NEW APPOINTMENT
-             */
+
+            // -------------------------------------------------
+            // CREATE
+            // -------------------------------------------------
+
             createAppointment(request, response);
 
         } catch (IllegalArgumentException e) {
@@ -150,48 +171,130 @@ public class AppointmentServlet extends HttpServlet {
         }
     }
 
-    /*
-     * CREATE APPOINTMENT
-     */
+
+    // =========================================================
+    // CREATE APPOINTMENT
+    // =========================================================
+
     private void createAppointment(
             HttpServletRequest request,
             HttpServletResponse response)
             throws SQLException, IOException {
 
-        Long patientId =
-                Long.parseLong(
-                        request.getParameter(
-                                "patientId"
-                        ).trim()
-                );
+        String patientIdText =
+                request.getParameter("patientId");
 
-        Long dentistId =
-                Long.parseLong(
-                        request.getParameter(
-                                "dentistId"
-                        ).trim()
-                );
+        String dentistIdText =
+                request.getParameter("dentistId");
 
-        Long treatmentId =
-                Long.parseLong(
-                        request.getParameter(
-                                "treatmentId"
-                        ).trim()
-                );
+        String treatmentIdText =
+                request.getParameter("treatmentId");
 
-        LocalDate date =
-                LocalDate.parse(
-                        request.getParameter(
-                                "appointmentDate"
-                        ).trim()
-                );
+        String dateText =
+                request.getParameter("appointmentDate");
 
-        LocalTime time =
-                LocalTime.parse(
-                        request.getParameter(
-                                "appointmentTime"
-                        ).trim()
-                );
+        String timeText =
+                request.getParameter("appointmentTime");
+
+
+        if (patientIdText == null ||
+                patientIdText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Please select a patient."
+            );
+        }
+
+
+        if (dentistIdText == null ||
+                dentistIdText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Please select a dentist."
+            );
+        }
+
+
+        if (treatmentIdText == null ||
+                treatmentIdText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Please select a treatment."
+            );
+        }
+
+
+        if (dateText == null ||
+                dateText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Appointment date is required."
+            );
+        }
+
+
+        if (timeText == null ||
+                timeText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Appointment time is required."
+            );
+        }
+
+
+        Long patientId;
+        Long dentistId;
+        Long treatmentId;
+
+
+        try {
+
+            patientId =
+                    Long.parseLong(
+                            patientIdText.trim()
+                    );
+
+            dentistId =
+                    Long.parseLong(
+                            dentistIdText.trim()
+                    );
+
+            treatmentId =
+                    Long.parseLong(
+                            treatmentIdText.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "Invalid patient, dentist, or treatment."
+            );
+        }
+
+
+        LocalDate date;
+        LocalTime time;
+
+
+        try {
+
+            date =
+                    LocalDate.parse(
+                            dateText.trim()
+                    );
+
+            time =
+                    LocalTime.parse(
+                            timeText.trim()
+                    );
+
+        } catch (Exception e) {
+
+            throw new IllegalArgumentException(
+                    "Please enter a valid appointment date and time."
+            );
+        }
+
 
         Appointment appointment =
                 new Appointment(
@@ -205,9 +308,11 @@ public class AppointmentServlet extends HttpServlet {
                         treatmentId
                 );
 
+
         appointmentService.createAppointment(
                 appointment
         );
+
 
         response.sendRedirect(
                 request.getContextPath()
@@ -215,22 +320,56 @@ public class AppointmentServlet extends HttpServlet {
         );
     }
 
-    /*
-     * VIEW ONE APPOINTMENT
-     */
+
+    // =========================================================
+    // VIEW APPOINTMENT
+    // =========================================================
+
     private void viewAppointment(
             HttpServletRequest request,
             HttpServletResponse response)
             throws SQLException, IOException {
 
-        Long id =
-                Long.parseLong(
-                        request.getParameter("id")
-                                .trim()
-                );
+        String idText =
+                request.getParameter("id");
+
+
+        if (idText == null ||
+                idText.trim().isEmpty()) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Appointment ID is required."
+            );
+
+            return;
+        }
+
+
+        Long id;
+
+
+        try {
+
+            id =
+                    Long.parseLong(
+                            idText.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid appointment ID."
+            );
+
+            return;
+        }
+
 
         Appointment appointment =
                 appointmentService.getAppointmentById(id);
+
 
         if (appointment == null) {
 
@@ -241,196 +380,667 @@ public class AppointmentServlet extends HttpServlet {
 
             return;
         }
+
+
+        Patient patient =
+                findPatient(
+                        patientService.getAllPatients(),
+                        appointment.getPatientId()
+                );
+
+
+        Dentist dentist =
+                findDentist(
+                        dentistService.getAllDentists(),
+                        appointment.getDentistId()
+                );
+
+
+        Treatment treatment =
+                findTreatment(
+                        treatmentService.getAllTreatments(),
+                        appointment.getTreatmentId()
+                );
+
 
         response.setContentType(
                 "text/html;charset=UTF-8"
         );
 
+
+        String contextPath =
+                request.getContextPath();
+
+
+        String appointmentsUrl =
+                contextPath +
+                        "/appointments?filter=active";
+
+
+        String dashboardUrl =
+                contextPath +
+                        "/dashboard";
+
+
+        String status =
+                appointment.getStatus();
+
+
+        if (status == null) {
+            status = "";
+        }
+
+
+        String statusClass =
+                status.toLowerCase();
+
+
         StringBuilder html =
                 new StringBuilder();
 
-        html.append("""
-                <!DOCTYPE html>
-                <html>
-                <head>
-
-                <meta charset="UTF-8">
-
-                <meta name="viewport"
-                      content="width=device-width,
-                      initial-scale=1.0">
-
-                <title>
-                    View Appointment -
-                    Sunrise Dental Clinic
-                </title>
-
-                <style>
-
-                body {
-                    margin: 0;
-                    background: #f4f7fb;
-                    color: #1f2937;
-                    font-family: Arial, sans-serif;
-                }
-
-                header {
-                    background: #0f3d56;
-                    color: white;
-                    padding: 20px 40px;
-                }
-
-                header h1 {
-                    margin: 0 0 5px 0;
-                }
-
-                header p {
-                    margin: 0;
-                    color: #c9e8e5;
-                }
-
-                .container {
-                    max-width: 800px;
-                    margin: auto;
-                    padding: 40px;
-                }
-
-                .card {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow:
-                        0 3px 12px
-                        rgba(0,0,0,0.08);
-                }
-
-                h2 {
-                    color: #0f3d56;
-                }
-
-                .row {
-                    padding: 15px 0;
-                    border-bottom:
-                        1px solid #e5e7eb;
-                }
-
-                .label {
-                    font-weight: bold;
-                    color: #0f3d56;
-                }
-
-                .value {
-                    margin-top: 5px;
-                }
-
-                .back {
-                    display: inline-block;
-                    margin-top: 25px;
-                    color: #159a9c;
-                    font-weight: bold;
-                    text-decoration: none;
-                }
-
-                </style>
-
-                </head>
-
-                <body>
-
-                <header>
-                    <h1>Sunrise Dental Clinic</h1>
-                    <p>Appointment Details</p>
-                </header>
-
-                <div class="container">
-
-                <div class="card">
-
-                <h2>Appointment Details</h2>
-                """);
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Appointment Number</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getAppointmentNumber())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Patient ID</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getPatientId())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Dentist ID</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getDentistId())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Treatment ID</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getTreatmentId())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Date</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getAppointmentDate())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Time</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getAppointmentTime())
-                .append("</div></div>");
-
-        html.append("<div class=\"row\">")
-                .append("<div class=\"label\">Status</div>")
-                .append("<div class=\"value\">")
-                .append(appointment.getStatus())
-                .append("</div></div>");
 
         html.append("""
-                <a class="back"
-                   href="appointments?filter=active">
-                   ← Back to Appointments
-                </a>
+<!DOCTYPE html>
+<html lang="en">
 
-                </div>
+<head>
 
-                </div>
+<meta charset="UTF-8">
 
-                </body>
-                </html>
-                """);
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1.0">
+
+<title>
+Appointment Details - Sunrise Dental Clinic
+</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f8fa;
+    color: #1f2937;
+}
+
+.page {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 245px;
+    min-width: 245px;
+    background: #0f3d56;
+    color: white;
+    padding: 28px 18px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
+
+.logo {
+    padding: 0 12px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 25px;
+}
+
+.logo h1 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
+
+.logo p {
+    font-size: 12px;
+    color: #b8d9df;
+}
+
+.nav-title {
+    font-size: 11px;
+    color: #91b8c4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 12px;
+    margin-bottom: 10px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    width: 100%%;
+    height: 42px;
+    padding: 0 14px;
+    margin-bottom: 5px;
+    border-radius: 7px;
+    color: #dcecef;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.nav-item:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.nav-item.active {
+    background: #159a9c;
+    color: white;
+    font-weight: 600;
+    border-color: #159a9c;
+}
+
+.main {
+    margin-left: 245px;
+    width: calc(100%% - 245px);
+    min-width: 0;
+}
+
+.topbar {
+    height: 75px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 0 35px;
+}
+
+.page-title h2 {
+    color: #0f3d56;
+    font-size: 22px;
+}
+
+.page-title p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.user-info {
+    font-size: 14px;
+    font-weight: bold;
+    color: #374151;
+}
+
+.content {
+    padding: 32px;
+    max-width: 1300px;
+}
+
+.back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #159a9c;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.back:hover {
+    text-decoration: underline;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 22px 25px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-header h3 {
+    color: #0f3d56;
+    font-size: 19px;
+}
+
+.card-header p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.appointment-number {
+    background: #e9f8f7;
+    color: #0f3d56;
+    padding: 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 17px;
+    margin-bottom: 22px;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.detail {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 17px;
+    background: #fafcfd;
+}
+
+.label {
+    color: #64748b;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    font-weight: bold;
+    margin-bottom: 7px;
+}
+
+.value {
+    color: #1f2937;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.status {
+    display: inline-block;
+    padding: 6px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.pending {
+    background: #fff7d6;
+    color: #956b00;
+}
+
+.confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.completed {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-block;
+    padding: 11px 17px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.btn-back {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.btn-edit {
+    background: #159a9c;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #117779;
+}
+
+@media (max-width: 800px) {
+
+    .sidebar {
+        position: static;
+        width: 100%%;
+        min-width: 0;
+    }
+
+    .page {
+        display: block;
+    }
+
+    .main {
+        margin-left: 0;
+        width: 100%%;
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+<aside class="sidebar">
+
+    <div class="logo">
+
+        <h1>
+            Sunrise Dental Clinic
+        </h1>
+
+        <p>
+            Management System
+        </p>
+
+    </div>
+
+    <div class="nav-title">
+        Main Menu
+    </div>
+
+    <a class="nav-item"
+       href="%s">
+        Dashboard
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Patients
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Dentists
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Treatments
+    </a>
+
+    <a class="nav-item active"
+       href="%s">
+        Appointments
+    </a>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+    <div class="page-title">
+
+        <h2>
+            Appointment Details
+        </h2>
+
+        <p>
+            View appointment information
+        </p>
+
+    </div>
+
+    <div class="user-info">
+        Sunrise Dental Clinic
+    </div>
+
+</header>
+
+<div class="content">
+
+<a class="back"
+   href="%s">
+    ← Back to Appointments
+</a>
+
+<div class="card">
+
+    <div class="card-header">
+
+        <h3>
+            Appointment Details
+        </h3>
+
+        <p>
+            Complete information about this appointment
+        </p>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="appointment-number">
+            Appointment #%s
+        </div>
+
+        <div class="details-grid">
+""".formatted(
+                dashboardUrl,
+                contextPath + "/patients",
+                contextPath + "/dentists",
+                contextPath + "/treatments",
+                appointmentsUrl,
+                appointmentsUrl,
+                escapeHtml(
+                        String.valueOf(
+                                appointment.getAppointmentNumber()
+                        )
+                )
+        ));
+
+
+        addDetail(
+                html,
+                "Patient",
+                patient != null
+                        ? patient.getPatientName()
+                        : "Patient #" +
+                        appointment.getPatientId()
+        );
+
+
+        addDetail(
+                html,
+                "Dentist",
+                dentist != null
+                        ? dentist.getDentistName()
+                        : "Dentist #" +
+                        appointment.getDentistId()
+        );
+
+
+        addDetail(
+                html,
+                "Specialization",
+                dentist != null
+                        ? dentist.getSpecialization()
+                        : "N/A"
+        );
+
+
+        addDetail(
+                html,
+                "Treatment",
+                treatment != null
+                        ? treatment.getTreatmentName()
+                        : "Treatment #" +
+                        appointment.getTreatmentId()
+        );
+
+
+        addDetail(
+                html,
+                "Appointment Date",
+                String.valueOf(
+                        appointment.getAppointmentDate()
+                )
+        );
+
+
+        addDetail(
+                html,
+                "Appointment Time",
+                formatTime(
+                        appointment.getAppointmentTime()
+                )
+        );
+
+
+        html.append(
+                "<div class=\"detail\">" +
+                        "<div class=\"label\">Status</div>" +
+                        "<div class=\"value\">" +
+                        "<span class=\"status " +
+                        escapeHtml(statusClass) +
+                        "\">" +
+                        escapeHtml(status) +
+                        "</span>" +
+                        "</div>" +
+                        "</div>"
+        );
+
+
+        html.append("""
+        </div>
+
+        <div class="buttons">
+
+            <a class="btn btn-back"
+               href="
+        """);
+
+        html.append(
+                escapeHtml(appointmentsUrl)
+        );
+
+        html.append("""
+               ">
+                ← Back to Appointments
+            </a>
+        """);
+
+
+        if (!"CANCELLED".equalsIgnoreCase(status)) {
+
+            html.append(
+                    "<a class=\"btn btn-edit\" href=\"" +
+                            escapeHtml(contextPath) +
+                            "/appointments?action=edit&id=" +
+                            appointment.getId() +
+                            "\">" +
+                            "Edit Appointment" +
+                            "</a>"
+            );
+        }
+
+
+        html.append("""
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+</body>
+
+</html>
+""");
+
 
         response.getWriter()
                 .write(html.toString());
     }
 
-    /*
-     * EDIT APPOINTMENT FORM
-     *
-     * Existing appointment information is loaded
-     * from the database and displayed in the form.
-     */
+
+    // =========================================================
+    // EDIT APPOINTMENT FORM
+    // =========================================================
+
     private void editAppointmentForm(
             HttpServletRequest request,
             HttpServletResponse response)
             throws SQLException, IOException {
 
-        Long id =
-                Long.parseLong(
-                        request.getParameter("id")
-                                .trim()
-                );
+        String idText =
+                request.getParameter("id");
 
-        /*
-         * Get the existing appointment.
-         */
+
+        if (idText == null ||
+                idText.trim().isEmpty()) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Appointment ID is required."
+            );
+
+            return;
+        }
+
+
+        Long id;
+
+
+        try {
+
+            id =
+                    Long.parseLong(
+                            idText.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            response.sendError(
+                    HttpServletResponse.SC_BAD_REQUEST,
+                    "Invalid appointment ID."
+            );
+
+            return;
+        }
+
+
         Appointment appointment =
                 appointmentService.getAppointmentById(id);
+
 
         if (appointment == null) {
 
@@ -441,6 +1051,7 @@ public class AppointmentServlet extends HttpServlet {
 
             return;
         }
+
 
         List<Patient> patients =
                 patientService.getAllPatients();
@@ -451,315 +1062,650 @@ public class AppointmentServlet extends HttpServlet {
         List<Treatment> treatments =
                 treatmentService.getAllTreatments();
 
+
         response.setContentType(
                 "text/html;charset=UTF-8"
         );
 
+
+        String contextPath =
+                request.getContextPath();
+
+
+        String appointmentsUrl =
+                contextPath +
+                        "/appointments?filter=active";
+
+
         StringBuilder html =
                 new StringBuilder();
 
+
         html.append("""
-                <!DOCTYPE html>
-                <html>
-                <head>
+<!DOCTYPE html>
 
-                <meta charset="UTF-8">
+<html lang="en">
 
-                <meta name="viewport"
-                      content="width=device-width,
-                      initial-scale=1.0">
+<head>
 
-                <title>
-                    Edit Appointment -
-                    Sunrise Dental Clinic
-                </title>
+<meta charset="UTF-8">
 
-                <style>
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1.0">
 
-                body {
-                    margin: 0;
-                    background: #f4f7fb;
-                    color: #1f2937;
-                    font-family: Arial, sans-serif;
-                }
+<title>
+Edit Appointment - Sunrise Dental Clinic
+</title>
 
-                header {
-                    background: #0f3d56;
-                    color: white;
-                    padding: 20px 40px;
-                }
+<style>
 
-                header h1 {
-                    margin: 0 0 5px 0;
-                }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-                header p {
-                    margin: 0;
-                    color: #c9e8e5;
-                }
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f8fa;
+    color: #1f2937;
+}
 
-                .container {
-                    max-width: 800px;
-                    margin: auto;
-                    padding: 40px;
-                }
+.page {
+    display: flex;
+    min-height: 100vh;
+}
 
-                .card {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 10px;
-                    box-shadow:
-                        0 3px 12px
-                        rgba(0,0,0,0.08);
-                }
+.sidebar {
+    width: 245px;
+    min-width: 245px;
+    background: #0f3d56;
+    color: white;
+    padding: 28px 18px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
 
-                h2 {
-                    color: #0f3d56;
-                }
+.logo {
+    padding: 0 12px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 25px;
+}
 
-                label {
-                    display: block;
-                    margin-top: 15px;
-                    margin-bottom: 5px;
-                    font-weight: bold;
-                }
+.logo h1 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
 
-                select,
-                input {
-                    width: 100%;
-                    padding: 11px;
-                    border: 1px solid #d1d5db;
-                    border-radius: 6px;
-                    font-size: 15px;
-                    box-sizing: border-box;
-                }
+.logo p {
+    font-size: 12px;
+    color: #b8d9df;
+}
 
-                button {
-                    margin-top: 20px;
-                    padding: 11px 20px;
-                    border: none;
-                    border-radius: 6px;
-                    background: #159a9c;
-                    color: white;
-                    cursor: pointer;
-                    font-size: 15px;
-                }
+.nav-title {
+    font-size: 11px;
+    color: #91b8c4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 12px;
+    margin-bottom: 10px;
+}
 
-                button:hover {
-                    background: #117779;
-                }
+.nav-item {
+    display: flex;
+    align-items: center;
+    width: 100%%;
+    height: 42px;
+    padding: 0 14px;
+    margin-bottom: 5px;
+    border-radius: 7px;
+    color: #dcecef;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
 
-                .back {
-                    display: inline-block;
-                    margin-top: 20px;
-                    color: #159a9c;
-                    font-weight: bold;
-                    text-decoration: none;
-                }
+.nav-item:hover {
+    background: rgba(255,255,255,0.08);
+}
 
-                </style>
+.nav-item.active {
+    background: #159a9c;
+    color: white;
+    font-weight: 600;
+    border-color: #159a9c;
+}
 
-                </head>
+.main {
+    margin-left: 245px;
+    width: calc(100%% - 245px);
+    min-width: 0;
+}
 
-                <body>
+.topbar {
+    height: 75px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
 
-                <header>
-                    <h1>Sunrise Dental Clinic</h1>
-                    <p>Edit Appointment</p>
-                </header>
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-                <div class="container">
+    padding: 0 35px;
+}
 
-                <div class="card">
+.page-title h2 {
+    color: #0f3d56;
+    font-size: 22px;
+}
 
-                <h2>Edit Appointment</h2>
+.page-title p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 4px;
+}
 
-                <form method="post"
-                      action="appointments">
+.user-info {
+    font-size: 14px;
+    font-weight: bold;
+    color: #374151;
+}
 
-                <input type="hidden"
-                       name="action"
-                       value="update">
+.content {
+    padding: 32px;
+    max-width: 1100px;
+}
 
-                <input type="hidden"
-                       name="id"
-                """);
+.back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #159a9c;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-        html.append(" value=\"")
-                .append(appointment.getId())
-                .append("\">");
+.back:hover {
+    text-decoration: underline;
+}
 
-        /*
-         * PATIENT
-         */
-        html.append("""
-                <label>Patient</label>
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
 
-                <select name="patientId" required>
+.card-header {
+    padding: 22px 25px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-                """);
+.card-header h3 {
+    color: #0f3d56;
+    font-size: 19px;
+}
+
+.card-header p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.card-body {
+    padding: 25px;
+}
+
+.appointment-number {
+    background: #e9f8f7;
+    color: #0f3d56;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    margin-bottom: 25px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 7px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%%;
+    height: 44px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: 0 13px;
+    font-size: 14px;
+    background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #159a9c;
+    box-shadow:
+        0 0 0 3px
+        rgba(21,154,156,0.10);
+}
+
+.buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+button,
+.btn {
+    display: inline-block;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.update-btn {
+    background: #159a9c;
+    color: white;
+}
+
+.update-btn:hover {
+    background: #117779;
+}
+
+.cancel-btn {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+@media (max-width: 800px) {
+
+    .sidebar {
+        position: static;
+        width: 100%%;
+        min-width: 0;
+    }
+
+    .page {
+        display: block;
+    }
+
+    .main {
+        margin-left: 0;
+        width: 100%%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+<aside class="sidebar">
+
+    <div class="logo">
+
+        <h1>
+            Sunrise Dental Clinic
+        </h1>
+
+        <p>
+            Management System
+        </p>
+
+    </div>
+
+    <div class="nav-title">
+        Main Menu
+    </div>
+
+    <a class="nav-item"
+       href="%s">
+        Dashboard
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Patients
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Dentists
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Treatments
+    </a>
+
+    <a class="nav-item active"
+       href="%s">
+        Appointments
+    </a>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+    <div class="page-title">
+
+        <h2>
+            Edit Appointment
+        </h2>
+
+        <p>
+            Update appointment information
+        </p>
+
+    </div>
+
+    <div class="user-info">
+        Sunrise Dental Clinic
+    </div>
+
+</header>
+
+<div class="content">
+
+<a class="back"
+   href="%s">
+    ← Back to Appointments
+</a>
+
+<div class="card">
+
+<div class="card-header">
+
+    <h3>
+        Edit Appointment
+    </h3>
+
+    <p>
+        Modify the appointment details below
+    </p>
+
+</div>
+
+<div class="card-body">
+
+<div class="appointment-number">
+
+    Appointment #%s
+
+</div>
+
+<form method="post"
+      action="%s">
+
+<input type="hidden"
+       name="action"
+       value="update">
+
+<input type="hidden"
+       name="id"
+       value="%s">
+
+<div class="form-grid">
+
+<div class="form-group">
+
+    <label>
+        Patient
+    </label>
+
+    <select
+        name="patientId"
+        required>
+
+        <option value="">
+            Select patient
+        </option>
+""".formatted(
+                contextPath + "/dashboard",
+                contextPath + "/patients",
+                contextPath + "/dentists",
+                contextPath + "/treatments",
+                appointmentsUrl,
+                appointmentsUrl,
+                escapeHtml(
+                        String.valueOf(
+                                appointment.getAppointmentNumber()
+                        )
+                ),
+                contextPath + "/appointments",
+                appointment.getId()
+        ));
+
 
         for (Patient patient : patients) {
 
-            html.append("<option value=\"")
-                    .append(patient.getId());
-
-            if (patient.getId().equals(
-                    appointment.getPatientId())) {
-
-                html.append("\" selected>");
-
-            } else {
-
-                html.append("\">");
-            }
-
-            html.append(patient.getPatientName())
-                    .append("</option>");
+            html.append(
+                    "<option value=\"" +
+                            patient.getId() +
+                            "\" " +
+                            (
+                                    patient.getId().equals(
+                                            appointment.getPatientId()
+                                    )
+                                            ? "selected"
+                                            : ""
+                            ) +
+                            ">" +
+                            escapeHtml(
+                                    patient.getPatientName()
+                            ) +
+                            "</option>"
+            );
         }
 
+
         html.append("""
-                </select>
+    </select>
 
-                <label>Dentist</label>
+</div>
 
-                <select name="dentistId" required>
+<div class="form-group">
 
-                """);
+    <label>
+        Dentist
+    </label>
 
-        /*
-         * DENTIST
-         */
+    <select
+        name="dentistId"
+        required>
+
+        <option value="">
+            Select dentist
+        </option>
+""");
+
+
         for (Dentist dentist : dentists) {
 
-            html.append("<option value=\"")
-                    .append(dentist.getId());
-
-            if (dentist.getId().equals(
-                    appointment.getDentistId())) {
-
-                html.append("\" selected>");
-
-            } else {
-
-                html.append("\">");
-            }
-
-            html.append(dentist.getDentistName())
-                    .append(" - ")
-                    .append(dentist.getSpecialization())
-                    .append("</option>");
+            html.append(
+                    "<option value=\"" +
+                            dentist.getId() +
+                            "\" " +
+                            (
+                                    dentist.getId().equals(
+                                            appointment.getDentistId()
+                                    )
+                                            ? "selected"
+                                            : ""
+                            ) +
+                            ">" +
+                            escapeHtml(
+                                    dentist.getDentistName()
+                            ) +
+                            " - " +
+                            escapeHtml(
+                                    dentist.getSpecialization()
+                            ) +
+                            "</option>"
+            );
         }
 
+
         html.append("""
-                </select>
+    </select>
 
-                <label>Treatment</label>
+</div>
 
-                <select name="treatmentId" required>
+<div class="form-group">
 
-                """);
+    <label>
+        Treatment
+    </label>
 
-        /*
-         * TREATMENT
-         */
+    <select
+        name="treatmentId"
+        required>
+
+        <option value="">
+            Select treatment
+        </option>
+""");
+
+
         for (Treatment treatment : treatments) {
 
-            html.append("<option value=\"")
-                    .append(treatment.getId());
-
-            if (treatment.getId().equals(
-                    appointment.getTreatmentId())) {
-
-                html.append("\" selected>");
-
-            } else {
-
-                html.append("\">");
-            }
-
-            html.append(treatment.getId())
-                    .append(" - ")
-                    .append(treatment.getTreatmentName())
-                    .append("</option>");
+            html.append(
+                    "<option value=\"" +
+                            treatment.getId() +
+                            "\" " +
+                            (
+                                    treatment.getId().equals(
+                                            appointment.getTreatmentId()
+                                    )
+                                            ? "selected"
+                                            : ""
+                            ) +
+                            ">" +
+                            escapeHtml(
+                                    treatment.getTreatmentName()
+                            ) +
+                            "</option>"
+            );
         }
 
+
         html.append("""
-                </select>
+    </select>
 
-                <label>Appointment Date</label>
+</div>
 
-                <input type="date"
-                       name="appointmentDate"
-                       required
-                """);
+<div class="form-group">
 
-        /*
-         * EXISTING DATE
-         *
-         * Example:
-         * value="2026-08-30"
-         */
+    <label>
+        Appointment Date
+    </label>
+
+    <input
+        type="date"
+        name="appointmentDate"
+        required
+""");
+
+
         if (appointment.getAppointmentDate() != null) {
 
-            html.append(" value=\"")
-                    .append(
-                            appointment
-                                    .getAppointmentDate()
-                                    .toString()
-                    )
-                    .append("\"");
+            html.append(
+                    " value=\"" +
+                            escapeHtml(
+                                    appointment
+                                            .getAppointmentDate()
+                                            .toString()
+                            ) +
+                            "\""
+            );
         }
 
+
         html.append("""
-                >
+    >
 
-                <label>Appointment Time</label>
+</div>
 
-                <input type="time"
-                       name="appointmentTime"
-                       required
-                """);
+<div class="form-group">
 
-        /*
-         * EXISTING TIME
-         *
-         * LocalTime can return:
-         *
-         * 10:30
-         *
-         * or
-         *
-         * 10:30:00
-         *
-         * HTML time input needs HH:mm.
-         */
+    <label>
+        Appointment Time
+    </label>
+
+    <input
+        type="time"
+        name="appointmentTime"
+        required
+""");
+
+
         if (appointment.getAppointmentTime() != null) {
 
-            String timeValue =
-                    appointment
-                            .getAppointmentTime()
-                            .toString();
-
-            if (timeValue.length() >= 5) {
-
-                timeValue =
-                        timeValue.substring(0, 5);
-            }
-
-            html.append(" value=\"")
-                    .append(timeValue)
-                    .append("\"");
+            html.append(
+                    " value=\"" +
+                            escapeHtml(
+                                    formatTime(
+                                            appointment
+                                                    .getAppointmentTime()
+                                    )
+                            ) +
+                            "\""
+            );
         }
 
+
         html.append("""
-                >
+    >
 
-                <label>Status</label>
+</div>
 
-                <select name="status" required>
+<div class="form-group">
 
-                """);
+    <label>
+        Status
+    </label>
+
+    <select
+        name="status"
+        required>
+""");
+
 
         String[] statuses = {
                 "PENDING",
@@ -768,76 +1714,130 @@ public class AppointmentServlet extends HttpServlet {
                 "CANCELLED"
         };
 
-        for (String status : statuses) {
 
-            html.append("<option value=\"")
-                    .append(status);
+        for (String statusValue : statuses) {
 
-            if (status.equalsIgnoreCase(
-                    appointment.getStatus())) {
-
-                html.append("\" selected>");
-
-            } else {
-
-                html.append("\">");
-            }
-
-            html.append(status)
-                    .append("</option>");
+            html.append(
+                    "<option value=\"" +
+                            statusValue +
+                            "\" " +
+                            (
+                                    statusValue.equalsIgnoreCase(
+                                            appointment.getStatus()
+                                    )
+                                            ? "selected"
+                                            : ""
+                            ) +
+                            ">" +
+                            statusValue +
+                            "</option>"
+            );
         }
 
+
         html.append("""
-                </select>
+    </select>
 
-                <button type="submit">
-                    Update Appointment
-                </button>
+</div>
 
-                </form>
+</div>
 
-                <a class="back"
-                   href="appointments?filter=active">
-                   ← Back to Appointments
-                </a>
+<div class="buttons">
 
-                </div>
+    <button
+        type="submit"
+        class="update-btn">
 
-                </div>
+        Update Appointment
 
-                </body>
-                </html>
-                """);
+    </button>
+
+    <a
+        class="btn cancel-btn"
+        href="
+""");
+
+
+        html.append(
+                escapeHtml(appointmentsUrl)
+        );
+
+
+        html.append("""
+        ">
+
+        Cancel
+
+    </a>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+</div>
+
+</body>
+
+</html>
+""");
+
 
         response.getWriter()
                 .write(html.toString());
     }
 
-    /*
-     * UPDATE APPOINTMENT
-     *
-     * Existing date/time are preserved if the
-     * form does not send a new value.
-     */
+
+    // =========================================================
+    // UPDATE APPOINTMENT
+    // =========================================================
+
     private void updateAppointment(
             HttpServletRequest request,
             HttpServletResponse response)
             throws SQLException, IOException {
 
-        Long id =
-                Long.parseLong(
-                        request.getParameter("id")
-                                .trim()
-                );
+        String idText =
+                request.getParameter("id");
 
-        /*
-         * First load the existing appointment.
-         *
-         * This is important because we want to
-         * preserve the existing date/time.
-         */
+
+        if (idText == null ||
+                idText.trim().isEmpty()) {
+
+            throw new IllegalArgumentException(
+                    "Appointment ID is required."
+            );
+        }
+
+
+        Long id;
+
+
+        try {
+
+            id =
+                    Long.parseLong(
+                            idText.trim()
+                    );
+
+        } catch (NumberFormatException e) {
+
+            throw new IllegalArgumentException(
+                    "Invalid appointment ID."
+            );
+        }
+
+
         Appointment existing =
                 appointmentService.getAppointmentById(id);
+
 
         if (existing == null) {
 
@@ -849,97 +1849,127 @@ public class AppointmentServlet extends HttpServlet {
             return;
         }
 
-        /*
-         * PATIENT
-         */
-        Long patientId =
-                Long.parseLong(
-                        request.getParameter("patientId")
-                                .trim()
-                );
 
-        /*
-         * DENTIST
-         */
-        Long dentistId =
-                Long.parseLong(
-                        request.getParameter("dentistId")
-                                .trim()
-                );
+        Long patientId;
+        Long dentistId;
+        Long treatmentId;
 
-        /*
-         * TREATMENT
-         */
-        Long treatmentId =
-                Long.parseLong(
-                        request.getParameter("treatmentId")
-                                .trim()
-                );
 
-        /*
-         * DATE
-         *
-         * Use the new date if supplied.
-         *
-         * Otherwise keep the existing date.
-         */
+        try {
+
+            String patientParameter =
+                    request.getParameter("patientId");
+
+            String dentistParameter =
+                    request.getParameter("dentistId");
+
+            String treatmentParameter =
+                    request.getParameter("treatmentId");
+
+
+            if (patientParameter == null ||
+                    dentistParameter == null ||
+                    treatmentParameter == null) {
+
+                throw new IllegalArgumentException();
+            }
+
+
+            patientId =
+                    Long.parseLong(
+                            patientParameter.trim()
+                    );
+
+            dentistId =
+                    Long.parseLong(
+                            dentistParameter.trim()
+                    );
+
+            treatmentId =
+                    Long.parseLong(
+                            treatmentParameter.trim()
+                    );
+
+        } catch (Exception e) {
+
+            throw new IllegalArgumentException(
+                    "Please select valid patient, dentist, and treatment."
+            );
+        }
+
+
         String dateParameter =
                 request.getParameter(
                         "appointmentDate"
                 );
 
+
         LocalDate date;
 
-        if (dateParameter == null
-                || dateParameter.trim().isEmpty()) {
+
+        if (dateParameter == null ||
+                dateParameter.trim().isEmpty()) {
 
             date =
                     existing.getAppointmentDate();
 
         } else {
 
-            date =
-                    LocalDate.parse(
-                            dateParameter.trim()
-                    );
+            try {
+
+                date =
+                        LocalDate.parse(
+                                dateParameter.trim()
+                        );
+
+            } catch (Exception e) {
+
+                throw new IllegalArgumentException(
+                        "Invalid appointment date."
+                );
+            }
         }
 
-        /*
-         * TIME
-         *
-         * Use the new time if supplied.
-         *
-         * Otherwise keep the existing time.
-         */
+
         String timeParameter =
                 request.getParameter(
                         "appointmentTime"
                 );
 
+
         LocalTime time;
 
-        if (timeParameter == null
-                || timeParameter.trim().isEmpty()) {
+
+        if (timeParameter == null ||
+                timeParameter.trim().isEmpty()) {
 
             time =
                     existing.getAppointmentTime();
 
         } else {
 
-            time =
-                    LocalTime.parse(
-                            timeParameter.trim()
-                    );
+            try {
+
+                time =
+                        LocalTime.parse(
+                                timeParameter.trim()
+                        );
+
+            } catch (Exception e) {
+
+                throw new IllegalArgumentException(
+                        "Invalid appointment time."
+                );
+            }
         }
 
-        /*
-         * STATUS
-         */
+
         String status =
                 request.getParameter("status");
 
-        if (status == null
-                || status.trim().isEmpty()) {
+
+        if (status == null ||
+                status.trim().isEmpty()) {
 
             status =
                     existing.getStatus();
@@ -950,11 +1980,7 @@ public class AppointmentServlet extends HttpServlet {
                     status.trim().toUpperCase();
         }
 
-        /*
-         * CREATE UPDATED APPOINTMENT
-         *
-         * Appointment number stays the same.
-         */
+
         Appointment appointment =
                 new Appointment(
                         id,
@@ -967,9 +1993,11 @@ public class AppointmentServlet extends HttpServlet {
                         treatmentId
                 );
 
+
         appointmentService.updateAppointment(
                 appointment
         );
+
 
         response.sendRedirect(
                 request.getContextPath()
@@ -977,9 +2005,11 @@ public class AppointmentServlet extends HttpServlet {
         );
     }
 
-    /*
-     * SHOW APPOINTMENTS
-     */
+
+    // =========================================================
+    // SHOW APPOINTMENTS
+    // =========================================================
+
     private void showAppointments(
             HttpServletRequest request,
             HttpServletResponse response)
@@ -999,26 +2029,39 @@ public class AppointmentServlet extends HttpServlet {
             List<Appointment> appointments =
                     appointmentService.getAllAppointments();
 
+
             String filter =
                     request.getParameter("filter");
 
-            if (filter == null
-                    || filter.trim().isEmpty()) {
+
+            if (filter == null ||
+                    filter.trim().isEmpty()) {
 
                 filter = "active";
             }
 
-            filter = filter.toLowerCase();
+
+            filter =
+                    filter.toLowerCase();
+
+
+            // -------------------------------------------------
+            // FILTER
+            // -------------------------------------------------
 
             if ("active".equals(filter)) {
 
                 appointments.removeIf(
                         appointment ->
-                                !("PENDING".equalsIgnoreCase(
-                                        appointment.getStatus())
-                                        ||
-                                        "CONFIRMED".equalsIgnoreCase(
-                                                appointment.getStatus()))
+                                !(
+                                        "PENDING".equalsIgnoreCase(
+                                                appointment.getStatus()
+                                        )
+                                                ||
+                                                "CONFIRMED".equalsIgnoreCase(
+                                                        appointment.getStatus()
+                                                )
+                                )
                 );
 
             } else if ("pending".equals(filter)) {
@@ -1026,7 +2069,8 @@ public class AppointmentServlet extends HttpServlet {
                 appointments.removeIf(
                         appointment ->
                                 !"PENDING".equalsIgnoreCase(
-                                        appointment.getStatus())
+                                        appointment.getStatus()
+                                )
                 );
 
             } else if ("confirmed".equals(filter)) {
@@ -1034,7 +2078,8 @@ public class AppointmentServlet extends HttpServlet {
                 appointments.removeIf(
                         appointment ->
                                 !"CONFIRMED".equalsIgnoreCase(
-                                        appointment.getStatus())
+                                        appointment.getStatus()
+                                )
                 );
 
             } else if ("cancelled".equals(filter)) {
@@ -1042,7 +2087,17 @@ public class AppointmentServlet extends HttpServlet {
                 appointments.removeIf(
                         appointment ->
                                 !"CANCELLED".equalsIgnoreCase(
-                                        appointment.getStatus())
+                                        appointment.getStatus()
+                                )
+                );
+
+            } else if ("completed".equals(filter)) {
+
+                appointments.removeIf(
+                        appointment ->
+                                !"COMPLETED".equalsIgnoreCase(
+                                        appointment.getStatus()
+                                )
                 );
 
             } else if ("all".equals(filter)) {
@@ -1055,381 +2110,819 @@ public class AppointmentServlet extends HttpServlet {
 
                 appointments.removeIf(
                         appointment ->
-                                !("PENDING".equalsIgnoreCase(
-                                        appointment.getStatus())
-                                        ||
-                                        "CONFIRMED".equalsIgnoreCase(
-                                                appointment.getStatus()))
+                                !(
+                                        "PENDING".equalsIgnoreCase(
+                                                appointment.getStatus()
+                                        )
+                                                ||
+                                                "CONFIRMED".equalsIgnoreCase(
+                                                        appointment.getStatus()
+                                                )
+                                )
                 );
             }
 
+
             String error =
-                    (String) request.getAttribute("error");
+                    (String) request.getAttribute(
+                            "error"
+                    );
+
 
             response.setContentType(
                     "text/html;charset=UTF-8"
             );
 
+
+            String contextPath =
+                    request.getContextPath();
+
+
+            String dashboardUrl =
+                    contextPath +
+                            "/dashboard";
+
+
+            String appointmentsUrl =
+                    contextPath +
+                            "/appointments";
+
+
             StringBuilder html =
                     new StringBuilder();
 
+
+            // =================================================
+            // HTML
+            // =================================================
+
             html.append("""
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
+<!DOCTYPE html>
 
-                    <meta charset="UTF-8">
+<html lang="en">
 
-                    <meta name="viewport"
-                          content="width=device-width,
-                          initial-scale=1.0">
+<head>
 
-                    <title>
-                        Appointments -
-                        Sunrise Dental Clinic
-                    </title>
+<meta charset="UTF-8">
 
-                    <style>
+<meta name="viewport"
+      content="width=device-width,
+      initial-scale=1.0">
 
-                    body {
-                        margin: 0;
-                        background: #f4f7fb;
-                        color: #1f2937;
-                        font-family: Arial, sans-serif;
-                    }
+<title>
+Appointments - Sunrise Dental Clinic
+</title>
 
-                    header {
-                        background: #0f3d56;
-                        color: white;
-                        padding: 20px 40px;
-                    }
+<style>
 
-                    header h1 {
-                        margin: 0 0 5px 0;
-                    }
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-                    header p {
-                        margin: 0;
-                        color: #c9e8e5;
-                    }
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f8fa;
+    color: #1f2937;
+}
 
-                    .container {
-                        max-width: 1400px;
-                        margin: auto;
-                        padding: 40px;
-                    }
+.page {
+    display: flex;
+    min-height: 100vh;
+}
 
-                    .card {
-                        background: white;
-                        padding: 25px;
-                        margin-bottom: 25px;
-                        border-radius: 10px;
-                        box-shadow:
-                            0 3px 12px
-                            rgba(0,0,0,0.08);
-                    }
+.sidebar {
+    width: 245px;
+    min-width: 245px;
+    background: #0f3d56;
+    color: white;
+    padding: 28px 18px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+}
 
-                    h2 {
-                        color: #0f3d56;
-                    }
+.logo {
+    padding: 0 12px 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    margin-bottom: 25px;
+}
 
-                    label {
-                        display: block;
-                        margin-top: 15px;
-                        margin-bottom: 5px;
-                        font-weight: bold;
-                    }
+.logo h1 {
+    font-size: 20px;
+    margin-bottom: 5px;
+}
 
-                    select,
-                    input {
-                        width: 100%;
-                        padding: 11px;
-                        border: 1px solid #d1d5db;
-                        border-radius: 6px;
-                        font-size: 15px;
-                        box-sizing: border-box;
-                    }
+.logo p {
+    font-size: 12px;
+    color: #b8d9df;
+}
 
-                    button {
-                        margin-top: 20px;
-                        padding: 11px 20px;
-                        border: none;
-                        border-radius: 6px;
-                        background: #159a9c;
-                        color: white;
-                        cursor: pointer;
-                        font-size: 15px;
-                    }
+.nav-title {
+    font-size: 11px;
+    color: #91b8c4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 0 12px;
+    margin-bottom: 10px;
+}
 
-                    button:hover {
-                        background: #117779;
-                    }
+.nav-item {
+    display: flex;
+    align-items: center;
+    width: 100%%;
+    height: 42px;
+    padding: 0 14px;
+    margin-bottom: 5px;
+    border-radius: 7px;
+    color: #dcecef;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
 
-                    .error {
-                        background: #fee2e2;
-                        color: #991b1b;
-                        padding: 12px;
-                        border-radius: 6px;
-                        margin-bottom: 20px;
-                    }
+.nav-item:hover {
+    background: rgba(255,255,255,0.08);
+}
 
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                    }
+.nav-item.active {
+    background: #159a9c;
+    color: white;
+    font-weight: 600;
+    border-color: #159a9c;
+}
 
-                    th,
-                    td {
-                        padding: 12px;
-                        border-bottom: 1px solid #ddd;
-                        text-align: left;
-                    }
+.main {
+    margin-left: 245px;
+    width: calc(100%% - 245px);
+    min-width: 0;
+}
 
-                    th {
-                        background: #0f3d56;
-                        color: white;
-                    }
+.topbar {
+    height: 75px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
 
-                    .status {
-                        font-weight: bold;
-                    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-                    .pending {
-                        color: #b45309;
-                    }
+    padding: 0 35px;
+}
 
-                    .confirmed {
-                        color: #166534;
-                    }
+.page-title h2 {
+    color: #0f3d56;
+    font-size: 22px;
+}
 
-                    .cancelled {
-                        color: #991b1b;
-                    }
+.page-title p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 4px;
+}
 
-                    .completed {
-                        color: #0369a1;
-                    }
+.user-info {
+    font-size: 14px;
+    font-weight: bold;
+    color: #374151;
+}
 
-                    .actions a {
-                        display: inline-block;
-                        padding: 7px 10px;
-                        margin-right: 5px;
-                        border-radius: 5px;
-                        text-decoration: none;
-                        font-size: 13px;
-                    }
+.content {
+    padding: 32px;
+    max-width: 1600px;
+}
 
-                    .view {
-                        background: #e0f2fe;
-                        color: #0369a1;
-                    }
+.back {
+    display: inline-block;
+    margin-bottom: 20px;
+    color: #159a9c;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+}
 
-                    .edit {
-                        background: #dcfce7;
-                        color: #166534;
-                    }
+.back:hover {
+    text-decoration: underline;
+}
 
-                    .cancel {
-                        background: #fee2e2;
-                        color: #991b1b;
-                        border: none;
-                        cursor: pointer;
-                        padding: 7px 10px;
-                        border-radius: 5px;
-                        font-size: 13px;
-                    }
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    overflow: hidden;
+}
 
-                    .filters {
-                        display: flex;
-                        gap: 10px;
-                        flex-wrap: wrap;
-                        margin-bottom: 20px;
-                    }
+.card-header {
+    padding: 22px 25px;
+    border-bottom: 1px solid #e5e7eb;
+}
 
-                    .filter {
-                        display: inline-block;
-                        padding: 10px 16px;
-                        border-radius: 6px;
-                        background: #e5e7eb;
-                        color: #374151;
-                        text-decoration: none;
-                        font-weight: bold;
-                    }
+.card-header h3 {
+    color: #0f3d56;
+    font-size: 19px;
+}
 
-                    .filter:hover {
-                        background: #d1d5db;
-                    }
+.card-header p {
+    color: #6b7280;
+    font-size: 13px;
+    margin-top: 5px;
+}
 
-                    .filter.active {
-                        background: #159a9c;
-                        color: white;
-                    }
+.card-body {
+    padding: 25px;
+}
 
-                    .empty {
-                        text-align: center;
-                        padding: 30px;
-                        color: #6b7280;
-                    }
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
 
-                    .back {
-                        display: inline-block;
-                        margin-bottom: 20px;
-                        color: #159a9c;
-                        font-weight: bold;
-                        text-decoration: none;
-                    }
+.form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: bold;
+    color: #374151;
+    margin-bottom: 7px;
+}
 
-                    </style>
+.form-group input,
+.form-group select {
+    width: 100%%;
+    height: 44px;
+    border: 1px solid #d1d5db;
+    border-radius: 7px;
+    padding: 0 13px;
+    font-size: 14px;
+    background: white;
+}
 
-                    </head>
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #159a9c;
 
-                    <body>
+    box-shadow:
+        0 0 0 3px
+        rgba(21,154,156,0.10);
+}
 
-                    <header>
+.form-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+}
 
-                        <h1>
-                            Sunrise Dental Clinic
-                        </h1>
+.primary-btn {
+    border: none;
+    background: #159a9c;
+    color: white;
+    padding: 11px 22px;
+    border-radius: 7px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 13px;
+}
 
-                        <p>
-                            Appointment Management
-                        </p>
+.primary-btn:hover {
+    background: #117779;
+}
 
-                    </header>
+.error {
+    background: #fff1f2;
+    color: #b91c1c;
+    border-left: 4px solid #dc2626;
+    padding: 13px 15px;
+    border-radius: 7px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
 
-                    <div class="container">
+.filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
 
-                    <a class="back"
-                       href="/sunrise-dental-clinic/">
-                       ← Back to Dashboard
-                    </a>
-                    """);
+.filter {
+    padding: 9px 15px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: bold;
+    border: 1px solid #e2e8f0;
+}
 
-            if (error != null) {
+.filter:hover {
+    background: #e2e8f0;
+}
 
-                html.append("""
-                        <div class="error">
-                        """);
+.filter.active {
+    background: #159a9c;
+    color: white;
+    border-color: #159a9c;
+}
 
-                html.append(error);
+.table-container {
+    overflow-x: auto;
+}
 
-                html.append("""
-                        </div>
-                        """);
+table {
+    width: 100%%;
+    border-collapse: collapse;
+    min-width: 1000px;
+}
+
+thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+tbody td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #edf0f2;
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+tbody tr:hover {
+    background: #fafcfd;
+}
+
+.appointment-number {
+    font-weight: bold;
+    color: #0f3d56;
+}
+
+.person-name {
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.secondary {
+    display: block;
+    color: #8a94a3;
+    font-size: 11px;
+    margin-top: 3px;
+}
+
+.status {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.pending {
+    background: #fff7d6;
+    color: #956b00;
+}
+
+.confirmed {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.completed {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.cancelled {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.actions {
+    white-space: nowrap;
+}
+
+.action-btn {
+    display: inline-block;
+    padding: 7px 10px;
+    margin-right: 4px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.view {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.edit {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.cancel {
+    background: #fee2e2;
+    color: #991b1b;
+    border: none;
+    cursor: pointer;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.cancel:hover {
+    background: #fecaca;
+}
+
+.empty {
+    text-align: center;
+    padding: 45px !important;
+    color: #94a3b8;
+}
+
+footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    padding: 25px;
+}
+
+@media (max-width: 900px) {
+
+    .sidebar {
+        width: 200px;
+        min-width: 200px;
+    }
+
+    .main {
+        margin-left: 200px;
+        width: calc(100%% - 200px);
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .content {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 650px) {
+
+    .sidebar {
+        position: static;
+        width: 100%%;
+        min-width: 0;
+    }
+
+    .page {
+        display: block;
+    }
+
+    .main {
+        margin-left: 0;
+        width: 100%%;
+    }
+
+    .topbar {
+        padding: 0 20px;
+    }
+
+    .content {
+        padding: 15px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+<aside class="sidebar">
+
+    <div class="logo">
+
+        <h1>
+            Sunrise Dental Clinic
+        </h1>
+
+        <p>
+            Management System
+        </p>
+
+    </div>
+
+    <div class="nav-title">
+        Main Menu
+    </div>
+
+    <a class="nav-item"
+       href="%s">
+        Dashboard
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Patients
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Dentists
+    </a>
+
+    <a class="nav-item"
+       href="%s">
+        Treatments
+    </a>
+
+    <a class="nav-item active"
+       href="%s">
+        Appointments
+    </a>
+
+</aside>
+
+<main class="main">
+
+<header class="topbar">
+
+    <div class="page-title">
+
+        <h2>
+            Appointments
+        </h2>
+
+        <p>
+            Schedule and manage patient appointments
+        </p>
+
+    </div>
+
+    <div class="user-info">
+        Sunrise Dental Clinic
+    </div>
+
+</header>
+
+<div class="content">
+
+<a class="back"
+   href="%s">
+    ← Back to Dashboard
+</a>
+""".formatted(
+                    dashboardUrl,
+                    contextPath + "/patients",
+                    contextPath + "/dentists",
+                    contextPath + "/treatments",
+                    appointmentsUrl,
+                    dashboardUrl
+            ));
+
+
+            // =================================================
+            // ERROR MESSAGE
+            // =================================================
+
+            if (error != null &&
+                    !error.isBlank()) {
+
+                html.append(
+                        "<div class=\"error\">" +
+                                escapeHtml(error) +
+                                "</div>"
+                );
             }
 
-            /*
-             * BOOK APPOINTMENT
-             */
+
+            // =================================================
+            // BOOK APPOINTMENT
+            // =================================================
+
             html.append("""
-                    <div class="card">
+<div class="card">
 
-                    <h2>Book Appointment</h2>
+<div class="card-header">
 
-                    <form method="post"
-                          action="appointments">
+    <h3>
+        Book New Appointment
+    </h3>
 
-                    <label>Patient</label>
+    <p>
+        Create a new appointment for a patient
+    </p>
 
-                    <select name="patientId"
-                            required>
+</div>
 
-                    <option value="">
-                        Select patient
-                    </option>
-                    """);
+<div class="card-body">
+
+<form method="post"
+      action="%s">
+
+<div class="form-grid">
+
+<div class="form-group">
+
+    <label>
+        Patient
+    </label>
+
+    <select
+        name="patientId"
+        required>
+
+        <option value="">
+            Select patient
+        </option>
+""".formatted(
+                    appointmentsUrl
+            ));
+
 
             for (Patient patient : patients) {
 
-                html.append("<option value=\"")
-                        .append(patient.getId())
-                        .append("\">")
-                        .append(patient.getPatientName())
-                        .append("</option>");
+                html.append(
+                        "<option value=\"" +
+                                patient.getId() +
+                                "\">" +
+                                escapeHtml(
+                                        patient.getPatientName()
+                                ) +
+                                "</option>"
+                );
             }
 
+
             html.append("""
-                    </select>
+    </select>
 
-                    <label>Dentist</label>
+</div>
 
-                    <select name="dentistId"
-                            required>
+<div class="form-group">
 
-                    <option value="">
-                        Select dentist
-                    </option>
-                    """);
+    <label>
+        Dentist
+    </label>
+
+    <select
+        name="dentistId"
+        required>
+
+        <option value="">
+            Select dentist
+        </option>
+""");
+
 
             for (Dentist dentist : dentists) {
 
-                html.append("<option value=\"")
-                        .append(dentist.getId())
-                        .append("\">")
-                        .append(dentist.getDentistName())
-                        .append(" - ")
-                        .append(dentist.getSpecialization())
-                        .append("</option>");
+                html.append(
+                        "<option value=\"" +
+                                dentist.getId() +
+                                "\">" +
+                                escapeHtml(
+                                        dentist.getDentistName()
+                                ) +
+                                " - " +
+                                escapeHtml(
+                                        dentist.getSpecialization()
+                                ) +
+                                "</option>"
+                );
             }
 
+
             html.append("""
-                    </select>
+    </select>
 
-                    <label>Treatment</label>
+</div>
 
-                    <select name="treatmentId"
-                            required>
+<div class="form-group">
 
-                    <option value="">
-                        Select treatment
-                    </option>
-                    """);
+    <label>
+        Treatment
+    </label>
+
+    <select
+        name="treatmentId"
+        required>
+
+        <option value="">
+            Select treatment
+        </option>
+""");
+
 
             for (Treatment treatment : treatments) {
 
-                html.append("<option value=\"")
-                        .append(treatment.getId())
-                        .append("\">")
-                        .append(treatment.getId())
-                        .append(" - ")
-                        .append(treatment.getTreatmentName())
-                        .append("</option>");
+                html.append(
+                        "<option value=\"" +
+                                treatment.getId() +
+                                "\">" +
+                                escapeHtml(
+                                        treatment.getTreatmentName()
+                                ) +
+                                "</option>"
+                );
             }
 
+
             html.append("""
-                    </select>
+    </select>
 
-                    <label>Appointment Date</label>
+</div>
 
-                    <input type="date"
-                           name="appointmentDate"
-                           required>
+<div class="form-group">
 
-                    <label>Appointment Time</label>
+    <label>
+        Appointment Date
+    </label>
 
-                    <input type="time"
-                           name="appointmentTime"
-                           required>
+    <input
+        type="date"
+        name="appointmentDate"
+        required>
 
-                    <button type="submit">
-                        Book Appointment
-                    </button>
+</div>
 
-                    </form>
+<div class="form-group">
 
-                    </div>
+    <label>
+        Appointment Time
+    </label>
 
-                    <div class="card">
+    <input
+        type="time"
+        name="appointmentTime"
+        required>
 
-                    <h2>Appointments</h2>
+</div>
 
-                    <div class="filters">
+</div>
 
-                    """);
+<div class="form-actions">
 
-            /*
-             * FILTER BUTTONS
-             */
+    <button
+        type="submit"
+        class="primary-btn">
+
+        Book Appointment
+
+    </button>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+""");
+
+
+            // =================================================
+            // APPOINTMENTS TABLE
+            // =================================================
+
+            html.append("""
+<div class="card">
+
+<div class="card-header">
+
+    <h3>
+        Appointments
+    </h3>
+
+    <p>
+        View and manage scheduled appointments
+    </p>
+
+</div>
+
+<div class="card-body">
+
+<div class="filters">
+""");
+
 
             addFilterButton(
                     html,
@@ -1439,6 +2932,7 @@ public class AppointmentServlet extends HttpServlet {
                     filter
             );
 
+
             addFilterButton(
                     html,
                     request,
@@ -1446,6 +2940,7 @@ public class AppointmentServlet extends HttpServlet {
                     "All",
                     filter
             );
+
 
             addFilterButton(
                     html,
@@ -1455,6 +2950,7 @@ public class AppointmentServlet extends HttpServlet {
                     filter
             );
 
+
             addFilterButton(
                     html,
                     request,
@@ -1462,6 +2958,16 @@ public class AppointmentServlet extends HttpServlet {
                     "Confirmed",
                     filter
             );
+
+
+            addFilterButton(
+                    html,
+                    request,
+                    "completed",
+                    "Completed",
+                    filter
+            );
+
 
             addFilterButton(
                     html,
@@ -1471,203 +2977,418 @@ public class AppointmentServlet extends HttpServlet {
                     filter
             );
 
+
             html.append("""
-                    </div>
+</div>
 
-                    <table>
+<div class="table-container">
 
-                    <tr>
-                        <th>Number</th>
-                        <th>Patient ID</th>
-                        <th>Dentist ID</th>
-                        <th>Treatment ID</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                    """);
+<table>
 
-            if (appointments.isEmpty()) {
+<thead>
+
+<tr>
+
+<th>
+    Appointment
+</th>
+
+<th>
+    Patient
+</th>
+
+<th>
+    Dentist
+</th>
+
+<th>
+    Treatment
+</th>
+
+<th>
+    Date
+</th>
+
+<th>
+    Time
+</th>
+
+<th>
+    Status
+</th>
+
+<th>
+    Actions
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+""");
+
+
+            if (appointments == null ||
+                    appointments.isEmpty()) {
 
                 html.append("""
-                        <tr>
-                            <td colspan="8"
-                                class="empty">
-                                No appointments found.
-                            </td>
-                        </tr>
-                        """);
+<tr>
+
+<td colspan="8"
+    class="empty">
+
+    No appointments found.
+
+</td>
+
+</tr>
+""");
 
             } else {
 
                 for (Appointment appointment :
                         appointments) {
 
-                    html.append("<tr>");
 
-                    html.append("<td>")
-                            .append(
-                                    appointment.getAppointmentNumber()
-                            )
-                            .append("</td>");
-
-                    html.append("<td>")
-                            .append(
+                    Patient patient =
+                            findPatient(
+                                    patients,
                                     appointment.getPatientId()
-                            )
-                            .append("</td>");
+                            );
 
-                    html.append("<td>")
-                            .append(
+
+                    Dentist dentist =
+                            findDentist(
+                                    dentists,
                                     appointment.getDentistId()
-                            )
-                            .append("</td>");
+                            );
 
-                    html.append("<td>")
-                            .append(
+
+                    Treatment treatment =
+                            findTreatment(
+                                    treatments,
                                     appointment.getTreatmentId()
-                            )
-                            .append("</td>");
+                            );
 
-                    html.append("<td>")
-                            .append(
-                                    appointment.getAppointmentDate()
-                            )
-                            .append("</td>");
-
-                    html.append("<td>")
-                            .append(
-                                    appointment.getAppointmentTime()
-                            )
-                            .append("</td>");
 
                     String status =
                             appointment.getStatus();
 
+
+                    if (status == null) {
+                        status = "";
+                    }
+
+
                     String statusClass =
-                            status == null
-                                    ? ""
-                                    : status.toLowerCase();
+                            status.toLowerCase();
+
+
+                    html.append("<tr>");
+
+
+                    // -------------------------------------------------
+                    // APPOINTMENT NUMBER
+                    // -------------------------------------------------
 
                     html.append(
-                                    "<td class=\"status "
-                                            + statusClass
-                                            + "\">"
-                            )
-                            .append(status)
-                            .append("</td>");
+                            "<td>" +
+                                    "<span class=\"appointment-number\">" +
+                                    escapeHtml(
+                                            String.valueOf(
+                                                    appointment
+                                                            .getAppointmentNumber()
+                                            )
+                                    ) +
+                                    "</span>" +
+                                    "</td>"
+                    );
 
-                    html.append("""
-                            <td class="actions">
-                            """);
 
-                    /*
-                     * VIEW
-                     */
+                    // -------------------------------------------------
+                    // PATIENT
+                    // -------------------------------------------------
+
+                    html.append("<td>");
+
+
+                    if (patient != null) {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        escapeHtml(
+                                                patient.getPatientName()
+                                        ) +
+                                        "</span>"
+                        );
+
+                        html.append(
+                                "<span class=\"secondary\">" +
+                                        "ID: " +
+                                        patient.getId() +
+                                        "</span>"
+                        );
+
+                    } else {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        "Patient #" +
+                                        appointment.getPatientId() +
+                                        "</span>"
+                        );
+                    }
+
+
+                    html.append("</td>");
+
+
+                    // -------------------------------------------------
+                    // DENTIST
+                    // -------------------------------------------------
+
+                    html.append("<td>");
+
+
+                    if (dentist != null) {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        escapeHtml(
+                                                dentist.getDentistName()
+                                        ) +
+                                        "</span>"
+                        );
+
+                        html.append(
+                                "<span class=\"secondary\">" +
+                                        escapeHtml(
+                                                dentist.getSpecialization()
+                                        ) +
+                                        "</span>"
+                        );
+
+                    } else {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        "Dentist #" +
+                                        appointment.getDentistId() +
+                                        "</span>"
+                        );
+                    }
+
+
+                    html.append("</td>");
+
+
+                    // -------------------------------------------------
+                    // TREATMENT
+                    // -------------------------------------------------
+
+                    html.append("<td>");
+
+
+                    if (treatment != null) {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        escapeHtml(
+                                                treatment
+                                                        .getTreatmentName()
+                                        ) +
+                                        "</span>"
+                        );
+
+                    } else {
+
+                        html.append(
+                                "<span class=\"person-name\">" +
+                                        "Treatment #" +
+                                        appointment.getTreatmentId() +
+                                        "</span>"
+                        );
+                    }
+
+
+                    html.append("</td>");
+
+
+                    // -------------------------------------------------
+                    // DATE
+                    // -------------------------------------------------
+
                     html.append(
-                                    "<a class=\"view\" href=\""
-                            )
-                            .append(
-                                    request.getContextPath()
-                            )
-                            .append(
-                                    "/appointments?action=view&id="
-                            )
-                            .append(
-                                    appointment.getId()
-                            )
-                            .append("\">View</a>");
+                            "<td>" +
+                                    escapeHtml(
+                                            String.valueOf(
+                                                    appointment
+                                                            .getAppointmentDate()
+                                            )
+                                    ) +
+                                    "</td>"
+                    );
 
-                    /*
-                     * EDIT
-                     *
-                     * Don't show Edit for cancelled
-                     * appointments.
-                     */
+
+                    // -------------------------------------------------
+                    // TIME
+                    // -------------------------------------------------
+
+                    html.append(
+                            "<td>" +
+                                    escapeHtml(
+                                            formatTime(
+                                                    appointment
+                                                            .getAppointmentTime()
+                                            )
+                                    ) +
+                                    "</td>"
+                    );
+
+
+                    // -------------------------------------------------
+                    // STATUS
+                    // -------------------------------------------------
+
+                    html.append(
+                            "<td>" +
+                                    "<span class=\"status " +
+                                    escapeHtml(statusClass) +
+                                    "\">" +
+                                    escapeHtml(status) +
+                                    "</span>" +
+                                    "</td>"
+                    );
+
+
+                    // -------------------------------------------------
+                    // ACTIONS
+                    // -------------------------------------------------
+
+                    html.append(
+                            "<td class=\"actions\">"
+                    );
+
+
+                    // VIEW
+
+                    html.append(
+                            "<a class=\"action-btn view\" " +
+                                    "href=\"" +
+                                    escapeHtml(contextPath) +
+                                    "/appointments?action=view&id=" +
+                                    appointment.getId() +
+                                    "\">" +
+                                    "View" +
+                                    "</a>"
+                    );
+
+
+                    // EDIT
+
                     if (!"CANCELLED".equalsIgnoreCase(
                             status)) {
 
                         html.append(
-                                        "<a class=\"edit\" href=\""
-                                )
-                                .append(
-                                        request.getContextPath()
-                                )
-                                .append(
-                                        "/appointments?action=edit&id="
-                                )
-                                .append(
-                                        appointment.getId()
-                                )
-                                .append(
-                                        "\">Edit</a>"
-                                );
+                                "<a class=\"action-btn edit\" " +
+                                        "href=\"" +
+                                        escapeHtml(contextPath) +
+                                        "/appointments?action=edit&id=" +
+                                        appointment.getId() +
+                                        "\">" +
+                                        "Edit" +
+                                        "</a>"
+                        );
                     }
 
-                    /*
-                     * CANCEL
-                     *
-                     * Only PENDING and CONFIRMED
-                     * appointments can be cancelled.
-                     */
+
+                    // CANCEL
+
                     if ("PENDING".equalsIgnoreCase(status)
                             ||
                             "CONFIRMED".equalsIgnoreCase(status)) {
 
-                        html.append("""
-                                <form method="post"
-                                      action="appointments"
-                                      style="display:inline;"
-                                      onsubmit="return confirm(
-                                      'Are you sure you want to cancel this appointment?'
-                                      );">
+                        html.append(
+                                "<form method=\"post\" " +
+                                        "action=\"" +
+                                        escapeHtml(appointmentsUrl) +
+                                        "\" " +
+                                        "style=\"display:inline;\" " +
+                                        "onsubmit=\"return confirm(" +
+                                        "'Are you sure you want to cancel this appointment?'" +
+                                        ");\">"
+                        );
 
-                                <input type="hidden"
-                                       name="action"
-                                       value="cancel">
 
-                                <input type="hidden"
-                                       name="id"
-                                """);
+                        html.append(
+                                "<input type=\"hidden\" " +
+                                        "name=\"action\" " +
+                                        "value=\"cancel\">"
+                        );
 
-                        html.append(" value=\"")
-                                .append(
-                                        appointment.getId()
-                                )
-                                .append("\">");
 
-                        html.append("""
-                                <button type="submit"
-                                        class="cancel">
-                                    Cancel
-                                </button>
+                        html.append(
+                                "<input type=\"hidden\" " +
+                                        "name=\"id\" " +
+                                        "value=\"" +
+                                        appointment.getId() +
+                                        "\">"
+                        );
 
-                                </form>
-                                """);
+
+                        html.append(
+                                "<button type=\"submit\" " +
+                                        "class=\"cancel\">" +
+                                        "Cancel" +
+                                        "</button>"
+                        );
+
+
+                        html.append("</form>");
                     }
 
-                    html.append("""
-                            </td>
-                            </tr>
-                            """);
+
+                    html.append("</td>");
+
+                    html.append("</tr>");
                 }
             }
 
+
             html.append("""
-                    </table>
+</tbody>
 
-                    </div>
+</table>
 
-                    </div>
+</div>
 
-                    </body>
+</div>
 
-                    </html>
-                    """);
+</div>
+
+</div>
+
+<footer>
+
+    © 2026 Sunrise Dental Clinic
+    Management System
+
+</footer>
+
+</main>
+
+</div>
+
+</body>
+
+</html>
+""");
+
 
             response.getWriter()
                     .write(html.toString());
+
 
         } catch (SQLException e) {
 
@@ -1678,9 +3399,11 @@ public class AppointmentServlet extends HttpServlet {
         }
     }
 
-    /*
-     * ADD APPOINTMENT FILTER BUTTON
-     */
+
+    // =========================================================
+    // FILTER BUTTON
+    // =========================================================
+
     private void addFilterButton(
             StringBuilder html,
             HttpServletRequest request,
@@ -1689,24 +3412,184 @@ public class AppointmentServlet extends HttpServlet {
             String currentFilter) {
 
         String activeClass =
-                filterValue.equalsIgnoreCase(currentFilter)
+                filterValue.equalsIgnoreCase(
+                        currentFilter
+                )
                         ? " active"
                         : "";
 
+
         html.append(
-                        "<a class=\"filter"
-                                + activeClass
-                                + "\" href=\""
-                )
-                .append(
-                        request.getContextPath()
-                )
-                .append(
-                        "/appointments?filter="
-                )
-                .append(filterValue)
-                .append("\">")
-                .append(label)
-                .append("</a>");
+                "<a class=\"filter" +
+                        activeClass +
+                        "\" href=\"" +
+                        escapeHtml(
+                                request.getContextPath()
+                        ) +
+                        "/appointments?filter=" +
+                        escapeHtml(filterValue) +
+                        "\">" +
+                        escapeHtml(label) +
+                        "</a>"
+        );
+    }
+
+
+    // =========================================================
+    // FIND PATIENT
+    // =========================================================
+
+    private Patient findPatient(
+            List<Patient> patients,
+            Long id) {
+
+        if (patients == null ||
+                id == null) {
+
+            return null;
+        }
+
+
+        for (Patient patient : patients) {
+
+            if (id.equals(
+                    patient.getId()
+            )) {
+
+                return patient;
+            }
+        }
+
+
+        return null;
+    }
+
+
+    // =========================================================
+    // FIND DENTIST
+    // =========================================================
+
+    private Dentist findDentist(
+            List<Dentist> dentists,
+            Long id) {
+
+        if (dentists == null ||
+                id == null) {
+
+            return null;
+        }
+
+
+        for (Dentist dentist : dentists) {
+
+            if (id.equals(
+                    dentist.getId()
+            )) {
+
+                return dentist;
+            }
+        }
+
+
+        return null;
+    }
+
+
+    // =========================================================
+    // FIND TREATMENT
+    // =========================================================
+
+    private Treatment findTreatment(
+            List<Treatment> treatments,
+            Long id) {
+
+        if (treatments == null ||
+                id == null) {
+
+            return null;
+        }
+
+
+        for (Treatment treatment : treatments) {
+
+            if (id.equals(
+                    treatment.getId()
+            )) {
+
+                return treatment;
+            }
+        }
+
+
+        return null;
+    }
+
+
+    // =========================================================
+    // DETAIL HELPER
+    // =========================================================
+
+    private void addDetail(
+            StringBuilder html,
+            String label,
+            String value) {
+
+        html.append(
+                "<div class=\"detail\">" +
+                        "<div class=\"label\">" +
+                        escapeHtml(label) +
+                        "</div>" +
+                        "<div class=\"value\">" +
+                        escapeHtml(value) +
+                        "</div>" +
+                        "</div>"
+        );
+    }
+
+
+    // =========================================================
+    // FORMAT TIME
+    // =========================================================
+
+    private String formatTime(
+            LocalTime time) {
+
+        if (time == null) {
+            return "";
+        }
+
+
+        String value =
+                time.toString();
+
+
+        if (value.length() >= 5) {
+
+            return value.substring(0, 5);
+        }
+
+
+        return value;
+    }
+
+
+    // =========================================================
+    // HTML ESCAPE
+    // =========================================================
+
+    private String escapeHtml(
+            String text) {
+
+        if (text == null) {
+            return "";
+        }
+
+
+        return text
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }
