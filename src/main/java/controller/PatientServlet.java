@@ -136,7 +136,9 @@ public class PatientServlet extends HttpServlet {
 
             request.setAttribute(
                     "patientCount",
-                    patients == null ? 0 : patients.size()
+                    patients == null
+                            ? 0
+                            : patients.size()
             );
 
             request.getRequestDispatcher(
