@@ -11,6 +11,7 @@ public class TreatmentService {
     private final TreatmentRepository repository =
             new TreatmentRepository();
 
+
     public Treatment addTreatment(
             Treatment treatment)
             throws SQLException {
@@ -22,7 +23,9 @@ public class TreatmentService {
         }
 
         if (treatment.getTreatmentName() == null ||
-                treatment.getTreatmentName().trim().isEmpty()) {
+                treatment.getTreatmentName()
+                        .trim()
+                        .isEmpty()) {
 
             throw new IllegalArgumentException(
                     "Treatment name is required."
@@ -30,7 +33,8 @@ public class TreatmentService {
         }
 
         if (treatment.getTreatmentCost() == null ||
-                treatment.getTreatmentCost().signum() < 0) {
+                treatment.getTreatmentCost()
+                        .signum() < 0) {
 
             throw new IllegalArgumentException(
                     "Treatment cost must be valid."
@@ -44,9 +48,32 @@ public class TreatmentService {
         return repository.save(treatment);
     }
 
+
     public List<Treatment> getAllTreatments()
             throws SQLException {
 
         return repository.findAll();
+    }
+
+
+    public Treatment getTreatmentById(Long id)
+            throws SQLException {
+
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "Invalid treatment ID."
+            );
+        }
+
+        Treatment treatment =
+                repository.findById(id);
+
+        if (treatment == null) {
+            throw new IllegalArgumentException(
+                    "Treatment not found."
+            );
+        }
+
+        return treatment;
     }
 }

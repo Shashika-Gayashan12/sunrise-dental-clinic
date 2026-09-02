@@ -1,8 +1,10 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.sunrise.dentalclinic.entity.Appointment" %>
 <%@ page import="com.sunrise.dentalclinic.entity.Patient" %>
 <%@ page import="com.sunrise.dentalclinic.entity.Dentist" %>
 <%@ page import="com.sunrise.dentalclinic.entity.Treatment" %>
+<%@ page import="com.sunrise.dentalclinic.entity.User" %>
 
 <%
     String contextPath = request.getContextPath();
@@ -25,10 +27,34 @@
     String error =
             (String) request.getAttribute("error");
 
+    User user =
+            (User) session.getAttribute("loggedInUser");
+
+    if (user == null) {
+        response.sendRedirect(request.getContextPath() + "/login");
+        return;
+    }
 
     if (filter == null || filter.isBlank()) {
         filter = "active";
     }
+
+    String username =
+            user.getUsername() != null
+                    ? user.getUsername()
+                    : "User";
+
+    String role =
+            user.getRole() != null
+                    ? user.getRole()
+                    : "";
+
+    String initial =
+            username.trim().isEmpty()
+                    ? "U"
+                    : username.trim()
+                        .substring(0, 1)
+                        .toUpperCase();
 %>
 
 <!DOCTYPE html>
@@ -60,144 +86,166 @@ body {
     color: #1f2937;
 }
 
-.page {
-    display: flex;
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+
+.main {
+    margin-left: 250px;
+    width: calc(100% - 250px);
     min-height: 100vh;
 }
 
-.sidebar {
-    width: 245px;
-    min-width: 245px;
-    background: #0f3d56;
-    color: white;
-    padding: 28px 18px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-}
 
-.logo {
-    padding: 0 12px 30px;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
-    margin-bottom: 25px;
-}
-
-.logo h1 {
-    font-size: 20px;
-    margin-bottom: 5px;
-}
-
-.logo p {
-    font-size: 12px;
-    color: #b8d9df;
-}
-
-.nav-title {
-    font-size: 11px;
-    color: #91b8c4;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 0 12px;
-    margin-bottom: 10px;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 42px;
-    padding: 0 14px;
-    margin-bottom: 5px;
-    border-radius: 7px;
-    color: #dcecef;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    white-space: nowrap;
-    border: 1px solid transparent;
-}
-
-.nav-item:hover {
-    background: rgba(255,255,255,0.08);
-}
-
-.nav-item.active {
-    background: #159a9c;
-    color: white;
-    border-color: #159a9c;
-}
-
-.main {
-    margin-left: 245px;
-    width: calc(100% - 245px);
-    min-width: 0;
-}
+/* =========================================================
+   TOPBAR
+   ========================================================= */
 
 .topbar {
     height: 75px;
+
     background: white;
+
     border-bottom: 1px solid #e5e7eb;
 
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
 
     padding: 0 35px;
+
+    position: sticky;
+
+    top: 0;
+
+    z-index: 100;
 }
 
 .page-title h2 {
     color: #0f3d56;
+
     font-size: 22px;
 }
 
 .page-title p {
     color: #6b7280;
+
     font-size: 13px;
+
     margin-top: 4px;
 }
 
-.user-info {
-    font-size: 14px;
-    font-weight: bold;
-    color: #374151;
+.user-area {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
 }
+
+.user-avatar {
+    width: 38px;
+
+    height: 38px;
+
+    border-radius: 50%;
+
+    background: #e2f4f3;
+
+    color: #0f7779;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-weight: bold;
+}
+
+.user-name {
+    color: #1f2937;
+
+    font-size: 13px;
+
+    font-weight: bold;
+}
+
+.user-role {
+    color: #6b7280;
+
+    font-size: 11px;
+
+    text-transform: uppercase;
+}
+
+
+/* =========================================================
+   CONTENT
+   ========================================================= */
 
 .content {
     padding: 32px;
+
     max-width: 1600px;
 }
 
+
+/* =========================================================
+   BACK
+   ========================================================= */
+
 .back {
     display: inline-block;
+
     margin-bottom: 20px;
+
     color: #159a9c;
+
     text-decoration: none;
+
     font-size: 14px;
+
     font-weight: bold;
 }
 
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
 .card {
     background: white;
+
     border: 1px solid #e5e7eb;
+
     border-radius: 12px;
+
     margin-bottom: 25px;
+
     overflow: hidden;
 }
 
 .card-header {
     padding: 22px 25px;
+
     border-bottom: 1px solid #e5e7eb;
 }
 
 .card-header h3 {
     color: #0f3d56;
+
     font-size: 19px;
 }
 
 .card-header p {
     color: #6b7280;
+
     font-size: 13px;
+
     margin-top: 5px;
 }
 
@@ -205,52 +253,82 @@ body {
     padding: 25px;
 }
 
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+
+    grid-template-columns:
+            repeat(2, 1fr);
+
     gap: 20px;
 }
 
 .form-group label {
     display: block;
+
     font-size: 13px;
+
     font-weight: bold;
+
     color: #374151;
+
     margin-bottom: 7px;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
+
     height: 44px;
+
     border: 1px solid #d1d5db;
+
     border-radius: 7px;
+
     padding: 0 13px;
+
     font-size: 14px;
+
     background: white;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
+
     border-color: #159a9c;
-    box-shadow: 0 0 0 3px rgba(21,154,156,0.10);
+
+    box-shadow:
+            0 0 0 3px rgba(21,154,156,0.10);
 }
 
 .form-actions {
     margin-top: 22px;
+
     display: flex;
+
     justify-content: flex-end;
 }
 
 .primary-btn {
     border: none;
+
     background: #159a9c;
+
     color: white;
+
     padding: 11px 22px;
+
     border-radius: 7px;
+
     font-weight: bold;
+
     cursor: pointer;
+
     font-size: 13px;
 }
 
@@ -258,31 +336,57 @@ body {
     background: #117779;
 }
 
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
 .error {
     background: #fff1f2;
+
     color: #b91c1c;
+
     border-left: 4px solid #dc2626;
+
     padding: 13px 15px;
+
     border-radius: 7px;
+
     margin-bottom: 20px;
+
     font-size: 14px;
 }
 
+
+/* =========================================================
+   FILTERS
+   ========================================================= */
+
 .filters {
     display: flex;
+
     gap: 8px;
+
     flex-wrap: wrap;
+
     margin-bottom: 20px;
 }
 
 .filter {
     padding: 9px 15px;
+
     border-radius: 6px;
+
     background: #f1f5f9;
+
     color: #475569;
+
     text-decoration: none;
+
     font-size: 13px;
+
     font-weight: bold;
+
     border: 1px solid #e2e8f0;
 }
 
@@ -292,9 +396,16 @@ body {
 
 .filter.active {
     background: #159a9c;
+
     color: white;
+
     border-color: #159a9c;
 }
+
+
+/* =========================================================
+   TABLE
+   ========================================================= */
 
 .table-container {
     overflow-x: auto;
@@ -302,26 +413,39 @@ body {
 
 table {
     width: 100%;
+
     border-collapse: collapse;
+
     min-width: 1000px;
 }
 
 thead th {
     background: #f8fafc;
+
     color: #64748b;
+
     font-size: 12px;
+
     text-transform: uppercase;
+
     letter-spacing: .4px;
+
     padding: 14px 12px;
+
     text-align: left;
+
     border-bottom: 1px solid #e5e7eb;
+
     white-space: nowrap;
 }
 
 tbody td {
     padding: 16px 12px;
+
     border-bottom: 1px solid #edf0f2;
+
     font-size: 13px;
+
     vertical-align: middle;
 }
 
@@ -331,48 +455,71 @@ tbody tr:hover {
 
 .appointment-number {
     font-weight: bold;
+
     color: #0f3d56;
 }
 
 .person-name {
     font-weight: bold;
+
     color: #1f2937;
 }
 
 .secondary {
     display: block;
+
     color: #8a94a3;
+
     font-size: 11px;
+
     margin-top: 3px;
 }
 
+
+/* =========================================================
+   STATUS
+   ========================================================= */
+
 .status {
     display: inline-block;
+
     padding: 6px 10px;
+
     border-radius: 20px;
+
     font-size: 11px;
+
     font-weight: bold;
 }
 
 .pending {
     background: #fff7d6;
+
     color: #956b00;
 }
 
 .confirmed {
     background: #dcfce7;
+
     color: #166534;
 }
 
 .completed {
     background: #e0f2fe;
+
     color: #0369a1;
 }
 
 .cancelled {
     background: #fee2e2;
+
     color: #991b1b;
 }
+
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
 
 .actions {
     white-space: nowrap;
@@ -380,32 +527,47 @@ tbody tr:hover {
 
 .action-btn {
     display: inline-block;
+
     padding: 7px 10px;
+
     margin-right: 4px;
+
     border-radius: 5px;
+
     text-decoration: none;
+
     font-size: 11px;
+
     font-weight: bold;
 }
 
 .view {
     background: #e0f2fe;
+
     color: #0369a1;
 }
 
 .edit {
     background: #dcfce7;
+
     color: #166534;
 }
 
 .cancel {
     background: #fee2e2;
+
     color: #991b1b;
+
     border: none;
+
     cursor: pointer;
+
     padding: 7px 10px;
+
     border-radius: 5px;
+
     font-size: 11px;
+
     font-weight: bold;
 }
 
@@ -413,29 +575,45 @@ tbody tr:hover {
     background: #fecaca;
 }
 
+
+/* =========================================================
+   EMPTY
+   ========================================================= */
+
 .empty {
     text-align: center;
+
     padding: 45px !important;
+
     color: #94a3b8;
 }
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
 
 footer {
     text-align: center;
+
     color: #94a3b8;
+
     font-size: 12px;
+
     padding: 25px;
 }
 
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
 @media (max-width: 900px) {
 
-    .sidebar {
-        width: 200px;
-        min-width: 200px;
-    }
-
     .main {
-        margin-left: 200px;
-        width: calc(100% - 200px);
+        margin-left: 0;
+
+        width: 100%;
     }
 
     .form-grid {
@@ -445,24 +623,11 @@ footer {
     .content {
         padding: 20px;
     }
+
 }
 
+
 @media (max-width: 650px) {
-
-    .sidebar {
-        position: static;
-        width: 100%;
-        min-width: 0;
-    }
-
-    .page {
-        display: block;
-    }
-
-    .main {
-        margin-left: 0;
-        width: 100%;
-    }
 
     .topbar {
         padding: 0 20px;
@@ -471,65 +636,42 @@ footer {
     .content {
         padding: 15px;
     }
+
+    .user-area {
+        display: none;
+    }
+
 }
 
 </style>
 
 </head>
 
+
 <body>
 
-<div class="page">
 
-<aside class="sidebar">
+<!-- =========================================================
+     COMMON SIDEBAR
+     ========================================================= -->
 
-    <div class="logo">
+<jsp:include page="sidebar.jsp" />
 
-        <h1>Sunrise Dental Clinic</h1>
 
-        <p>Management System</p>
-
-    </div>
-
-    <div class="nav-title">
-        Main Menu
-    </div>
-
-    <a class="nav-item"
-       href="<%= contextPath %>/dashboard">
-        Dashboard
-    </a>
-
-    <a class="nav-item"
-       href="<%= contextPath %>/patients">
-        Patients
-    </a>
-
-    <a class="nav-item"
-       href="<%= contextPath %>/dentists">
-        Dentists
-    </a>
-
-    <a class="nav-item"
-       href="<%= contextPath %>/treatments">
-        Treatments
-    </a>
-
-    <a class="nav-item active"
-       href="<%= contextPath %>/appointments">
-        Appointments
-    </a>
-
-</aside>
-
+<!-- =========================================================
+     MAIN
+     ========================================================= -->
 
 <main class="main">
+
 
 <header class="topbar">
 
     <div class="page-title">
 
-        <h2>Appointments</h2>
+        <h2>
+            Appointments
+        </h2>
 
         <p>
             Schedule and manage patient appointments
@@ -537,14 +679,32 @@ footer {
 
     </div>
 
-    <div class="user-info">
-        Sunrise Dental Clinic
+
+    <div class="user-area">
+
+        <div class="user-avatar">
+            <%= initial %>
+        </div>
+
+        <div>
+
+            <div class="user-name">
+                <%= username %>
+            </div>
+
+            <div class="user-role">
+                <%= role %>
+            </div>
+
+        </div>
+
     </div>
 
 </header>
 
 
 <div class="content">
+
 
 <a class="back"
    href="<%= contextPath %>/dashboard">
@@ -567,9 +727,9 @@ footer {
 %>
 
 
-<!-- =================================================
+<!-- =========================================================
      BOOK APPOINTMENT
-     ================================================= -->
+     ========================================================= -->
 
 <div class="card">
 
@@ -585,13 +745,17 @@ footer {
 
 </div>
 
+
 <div class="card-body">
 
 <form method="post"
       action="<%= contextPath %>/appointments">
 
+
 <div class="form-grid">
 
+
+<!-- PATIENT -->
 
 <div class="form-group">
 
@@ -626,6 +790,8 @@ footer {
 
 </div>
 
+
+<!-- DENTIST -->
 
 <div class="form-group">
 
@@ -663,6 +829,8 @@ footer {
 </div>
 
 
+<!-- TREATMENT -->
+
 <div class="form-group">
 
 <label>
@@ -697,6 +865,8 @@ footer {
 </div>
 
 
+<!-- DATE -->
+
 <div class="form-group">
 
 <label>
@@ -710,6 +880,8 @@ footer {
 
 </div>
 
+
+<!-- TIME -->
 
 <div class="form-group">
 
@@ -747,9 +919,9 @@ footer {
 </div>
 
 
-<!-- =================================================
+<!-- =========================================================
      APPOINTMENTS TABLE
-     ================================================= -->
+     ========================================================= -->
 
 <div class="card">
 
@@ -765,43 +937,67 @@ footer {
 
 </div>
 
+
 <div class="card-body">
 
 
+<!-- FILTERS -->
+
 <div class="filters">
+
 
 <a class="filter <%= "active".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=active">
+
     Active
+
 </a>
+
 
 <a class="filter <%= "all".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=all">
+
     All
+
 </a>
+
 
 <a class="filter <%= "pending".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=pending">
+
     Pending
+
 </a>
+
 
 <a class="filter <%= "confirmed".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=confirmed">
+
     Confirmed
+
 </a>
+
 
 <a class="filter <%= "completed".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=completed">
+
     Completed
+
 </a>
+
 
 <a class="filter <%= "cancelled".equalsIgnoreCase(filter) ? "active" : "" %>"
    href="<%= contextPath %>/appointments?filter=cancelled">
+
     Cancelled
+
 </a>
+
 
 </div>
 
+
+<!-- TABLE -->
 
 <div class="table-container">
 
@@ -811,21 +1007,37 @@ footer {
 
 <tr>
 
-<th>Appointment</th>
+<th>
+    Appointment
+</th>
 
-<th>Patient</th>
+<th>
+    Patient
+</th>
 
-<th>Dentist</th>
+<th>
+    Dentist
+</th>
 
-<th>Treatment</th>
+<th>
+    Treatment
+</th>
 
-<th>Date</th>
+<th>
+    Date
+</th>
 
-<th>Time</th>
+<th>
+    Time
+</th>
 
-<th>Status</th>
+<th>
+    Status
+</th>
 
-<th>Actions</th>
+<th>
+    Actions
+</th>
 
 </tr>
 
@@ -833,6 +1045,7 @@ footer {
 
 
 <tbody>
+
 
 <%
     if (appointments == null ||
@@ -850,6 +1063,7 @@ footer {
 
 </tr>
 
+
 <%
     } else {
 
@@ -866,6 +1080,7 @@ footer {
                         appointment.getPatientId().equals(p.getId())) {
 
                         patient = p;
+
                         break;
                     }
                 }
@@ -882,6 +1097,7 @@ footer {
                         appointment.getDentistId().equals(d.getId())) {
 
                         dentist = d;
+
                         break;
                     }
                 }
@@ -898,6 +1114,7 @@ footer {
                         appointment.getTreatmentId().equals(t.getId())) {
 
                         treatment = t;
+
                         break;
                     }
                 }
@@ -919,6 +1136,8 @@ footer {
 <tr>
 
 
+<!-- APPOINTMENT -->
+
 <td>
 
 <span class="appointment-number">
@@ -929,6 +1148,8 @@ footer {
 
 </td>
 
+
+<!-- PATIENT -->
 
 <td>
 
@@ -965,6 +1186,8 @@ Patient #<%= appointment.getPatientId() %>
 </td>
 
 
+<!-- DENTIST -->
+
 <td>
 
 <%
@@ -1000,6 +1223,8 @@ Dentist #<%= appointment.getDentistId() %>
 </td>
 
 
+<!-- TREATMENT -->
+
 <td>
 
 <%
@@ -1029,6 +1254,8 @@ Treatment #<%= appointment.getTreatmentId() %>
 </td>
 
 
+<!-- DATE -->
+
 <td>
 
 <%= appointment.getAppointmentDate() %>
@@ -1036,13 +1263,17 @@ Treatment #<%= appointment.getTreatmentId() %>
 </td>
 
 
+<!-- TIME -->
+
 <td>
 
 <%
     if (appointment.getAppointmentTime() != null) {
 %>
 
-<%= appointment.getAppointmentTime().toString().substring(0, 5) %>
+<%= appointment.getAppointmentTime()
+        .toString()
+        .substring(0, 5) %>
 
 <%
     }
@@ -1050,6 +1281,8 @@ Treatment #<%= appointment.getTreatmentId() %>
 
 </td>
 
+
+<!-- STATUS -->
 
 <td>
 
@@ -1061,6 +1294,8 @@ Treatment #<%= appointment.getTreatmentId() %>
 
 </td>
 
+
+<!-- ACTIONS -->
 
 <td class="actions">
 
@@ -1099,13 +1334,16 @@ Treatment #<%= appointment.getTreatmentId() %>
       style="display:inline;"
       onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
 
+
 <input type="hidden"
        name="action"
        value="cancel">
 
+
 <input type="hidden"
        name="id"
        value="<%= appointment.getId() %>">
+
 
 <button type="submit"
         class="cancel">
@@ -1131,6 +1369,7 @@ Treatment #<%= appointment.getTreatmentId() %>
     }
 %>
 
+
 </tbody>
 
 </table>
@@ -1140,6 +1379,7 @@ Treatment #<%= appointment.getTreatmentId() %>
 </div>
 
 </div>
+
 
 </div>
 
@@ -1154,7 +1394,6 @@ Management System
 
 </main>
 
-</div>
 
 </body>
 

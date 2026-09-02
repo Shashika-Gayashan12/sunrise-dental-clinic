@@ -51,6 +51,7 @@ public class TreatmentRepository {
         return treatment;
     }
 
+
     public List<Treatment> findAll()
             throws SQLException {
 
@@ -58,9 +59,10 @@ public class TreatmentRepository {
                 new ArrayList<>();
 
         String sql = """
-                SELECT id,
-                       treatment_name,
-                       treatment_cost
+                SELECT
+                    id,
+                    treatment_name,
+                    treatment_cost
                 FROM treatments
                 ORDER BY treatment_name
                 """;
@@ -77,9 +79,11 @@ public class TreatmentRepository {
                 Treatment treatment =
                         new Treatment(
                                 resultSet.getLong("id"),
+
                                 resultSet.getString(
                                         "treatment_name"
                                 ),
+
                                 resultSet.getBigDecimal(
                                         "treatment_cost"
                                 )
@@ -90,5 +94,48 @@ public class TreatmentRepository {
         }
 
         return treatments;
+    }
+
+
+    public Treatment findById(Long id)
+            throws SQLException {
+
+        String sql = """
+                SELECT
+                    id,
+                    treatment_name,
+                    treatment_cost
+                FROM treatments
+                WHERE id = ?
+                """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(1, id);
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                if (resultSet.next()) {
+
+                    return new Treatment(
+                            resultSet.getLong("id"),
+
+                            resultSet.getString(
+                                    "treatment_name"
+                            ),
+
+                            resultSet.getBigDecimal(
+                                    "treatment_cost"
+                            )
+                    );
+                }
+            }
+        }
+
+        return null;
     }
 }

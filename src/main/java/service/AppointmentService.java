@@ -1,22 +1,27 @@
 package com.sunrise.dentalclinic.service;
 
 import com.sunrise.dentalclinic.entity.Appointment;
-import com.sunrise.dentalclinic.entity.DentistAvailability;
+import com.sunrise.dentalclinic.entity.AppointmentBillingInfo;
 import com.sunrise.dentalclinic.repository.AppointmentRepository;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.UUID;
 
 public class AppointmentService {
 
-    private final AppointmentRepository repository =
+    private final AppointmentRepository appointmentRepository =
             new AppointmentRepository();
 
-    private final DentistAvailabilityService availabilityService =
+    private final DentistAvailabilityService
+            dentistAvailabilityService =
             new DentistAvailabilityService();
+
+
+    // =========================================================
+    // CREATE APPOINTMENT
+    // =========================================================
 
     public Appointment createAppointment(
             Appointment appointment)
@@ -40,21 +45,27 @@ public class AppointmentService {
             );
         }
 
-        if (appointment.getDentistId() == null) {
+        if (appointment.getDentistId() == null ||
+                appointment.getDentistId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a dentist."
+                    "Dentist is required."
             );
         }
 
-        if (appointment.getPatientId() == null) {
+        if (appointment.getPatientId() == null ||
+                appointment.getPatientId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a patient."
+                    "Patient is required."
             );
         }
 
-        if (appointment.getTreatmentId() == null) {
+        if (appointment.getTreatmentId() == null ||
+                appointment.getTreatmentId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a treatment."
+                    "Treatment is required."
             );
         }
 
@@ -66,151 +77,140 @@ public class AppointmentService {
             );
         }
 
-        LocalDate appointmentDate =
-                appointment.getAppointmentDate();
-
-        LocalTime appointmentTime =
-                appointment.getAppointmentTime();
-
-        List<DentistAvailability> schedules =
-                availabilityService.getByDentistId(
-                        appointment.getDentistId()
-                );
-
-        String appointmentDay =
-                appointmentDate
-                        .getDayOfWeek()
-                        .toString();
-
-        appointmentDay =
-                appointmentDay.substring(0, 1)
-                        + appointmentDay.substring(1)
-                        .toLowerCase();
-
-        boolean exactDateScheduleExists = false;
-        boolean weeklyScheduleExists = false;
-        boolean available = false;
-
-        for (DentistAvailability schedule : schedules) {
-
-            if (schedule.getAvailableDate() != null) {
-
-                if (schedule.getAvailableDate()
-                        .equals(appointmentDate)) {
-
-                    exactDateScheduleExists = true;
-
-                    LocalTime start =
-                            schedule.getStartTime();
-
-                    LocalTime end =
-                            schedule.getEndTime();
-
-                    if (!appointmentTime.isBefore(start)
-                            && !appointmentTime.isAfter(end)) {
-
-                        available = true;
-                        break;
-                    }
-                }
-
-                continue;
-            }
-
-            if (schedule.getDayOfWeek()
-                    .equalsIgnoreCase(appointmentDay)) {
-
-                weeklyScheduleExists = true;
-
-                LocalTime start =
-                        schedule.getStartTime();
-
-                LocalTime end =
-                        schedule.getEndTime();
-
-                if (!appointmentTime.isBefore(start)
-                        && !appointmentTime.isAfter(end)) {
-
-                    available = true;
-                    break;
-                }
-            }
-        }
-
-        if (exactDateScheduleExists && !available) {
-
-            throw new IllegalArgumentException(
-                    "The dentist is not available on "
-                            + appointmentDate
-                            + " at "
-                            + appointmentTime
-            );
-        }
-
-        if (!exactDateScheduleExists
-                && weeklyScheduleExists
-                && !available) {
-
-            throw new IllegalArgumentException(
-                    "The dentist is not available on "
-                            + appointmentDay
-                            + " at "
-                            + appointmentTime
-            );
-        }
-
-        boolean alreadyBooked =
-                repository.existsActiveAppointment(
+        boolean available =
+                isDentistAvailable(
                         appointment.getDentistId(),
-                        appointmentDate,
-                        appointmentTime
+                        appointment.getAppointmentDate(),
+                        appointment.getAppointmentTime()
                 );
 
-        if (alreadyBooked) {
-
+        if (!available) {
             throw new IllegalArgumentException(
-                    "This dentist is already booked at "
-                            + appointmentDate
-                            + " "
-                            + appointmentTime
-                            + ". Please choose another time."
+                    "Dentist is not available at the selected date and time."
             );
         }
+
+        boolean alreadyExists =
+                appointmentRepository
+                        .existsActiveAppointment(
+                                appointment.getDentistId(),
+                                appointment.getAppointmentDate(),
+                                appointment.getAppointmentTime()
+                        );
+
+        if (alreadyExists) {
+            throw new IllegalArgumentException(
+                    "This dentist already has an appointment at the selected date and time."
+            );
+        }
+
+        int lastNumber =
+                appointmentRepository
+                        .getLastAppointmentNumber();
+
+        String appointmentNumber =
+                "APT-" +
+                        String.format(
+                                "%07d",
+                                lastNumber + 1
+                        );
 
         appointment.setAppointmentNumber(
-                generateAppointmentNumber()
+                appointmentNumber
         );
 
-        appointment.setStatus("PENDING");
+        if (appointment.getStatus() == null ||
+                appointment.getStatus().isBlank()) {
 
-        return repository.save(appointment);
+            appointment.setStatus(
+                    "PENDING"
+            );
+        }
+
+        return appointmentRepository.save(
+                appointment
+        );
     }
 
 
-    /*
-     * Get all appointments.
-     */
+    // =========================================================
+    // GET ALL APPOINTMENTS
+    // =========================================================
+
     public List<Appointment> getAllAppointments()
             throws SQLException {
 
-        return repository.findAll();
+        return appointmentRepository.findAll();
     }
 
 
-    /*
-     * View one appointment.
-     */
-    public Appointment getAppointmentById(Long id)
+    // =========================================================
+    // GET APPOINTMENTS BY DATE
+    // =========================================================
+
+    public List<Appointment> getAppointmentsByDate(
+            LocalDate appointmentDate)
             throws SQLException {
 
-        if (id == null) {
+        if (appointmentDate == null) {
             throw new IllegalArgumentException(
-                    "Appointment ID is required."
+                    "Appointment date is required."
+            );
+        }
+
+        return appointmentRepository.findByDate(
+                appointmentDate
+        );
+    }
+
+
+    // =========================================================
+    // GET BILLING APPOINTMENTS BY DATE
+    // =========================================================
+    //
+    // This method returns appointments together with
+    // the patient name.
+    //
+    // Example:
+    //
+    // APT-1425975 - Kasun Perera
+    //
+    // =========================================================
+
+    public List<AppointmentBillingInfo>
+    getBillingAppointmentsByDate(
+            LocalDate appointmentDate)
+            throws SQLException {
+
+        if (appointmentDate == null) {
+            throw new IllegalArgumentException(
+                    "Appointment date is required."
+            );
+        }
+
+        return appointmentRepository
+                .findBillingAppointmentsByDate(
+                        appointmentDate
+                );
+    }
+
+
+    // =========================================================
+    // GET APPOINTMENT BY ID
+    // =========================================================
+
+    public Appointment getAppointmentById(
+            Long id)
+            throws SQLException {
+
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "Invalid appointment ID."
             );
         }
 
         Appointment appointment =
-                repository.findById(id);
+                appointmentRepository.findById(id);
 
         if (appointment == null) {
             throw new IllegalArgumentException(
@@ -222,22 +222,52 @@ public class AppointmentService {
     }
 
 
-    /*
-     * Update appointment.
-     */
-    public boolean updateAppointment(
-            Appointment appointment)
+    // =========================================================
+    // GET APPOINTMENT BY NUMBER
+    // =========================================================
+
+    public Appointment getAppointmentByNumber(
+            String appointmentNumber)
             throws SQLException {
 
-        if (appointment == null) {
+        if (appointmentNumber == null ||
+                appointmentNumber.isBlank()) {
+
             throw new IllegalArgumentException(
-                    "Appointment is required."
+                    "Appointment number is required."
             );
         }
 
-        if (appointment.getId() == null) {
+        Appointment appointment =
+                appointmentRepository
+                        .findByAppointmentNumber(
+                                appointmentNumber.trim()
+                        );
+
+        if (appointment == null) {
             throw new IllegalArgumentException(
-                    "Appointment ID is required."
+                    "Appointment not found."
+            );
+        }
+
+        return appointment;
+    }
+
+
+    // =========================================================
+    // UPDATE APPOINTMENT
+    // =========================================================
+
+    public void updateAppointment(
+            Appointment appointment)
+            throws SQLException {
+
+        if (appointment == null ||
+                appointment.getId() == null ||
+                appointment.getId() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Valid appointment is required."
             );
         }
 
@@ -253,21 +283,27 @@ public class AppointmentService {
             );
         }
 
-        if (appointment.getDentistId() == null) {
+        if (appointment.getDentistId() == null ||
+                appointment.getDentistId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a dentist."
+                    "Dentist is required."
             );
         }
 
-        if (appointment.getPatientId() == null) {
+        if (appointment.getPatientId() == null ||
+                appointment.getPatientId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a patient."
+                    "Patient is required."
             );
         }
 
-        if (appointment.getTreatmentId() == null) {
+        if (appointment.getTreatmentId() == null ||
+                appointment.getTreatmentId() <= 0) {
+
             throw new IllegalArgumentException(
-                    "Please select a treatment."
+                    "Treatment is required."
             );
         }
 
@@ -279,96 +315,58 @@ public class AppointmentService {
             );
         }
 
-        /*
-         * Check whether another active appointment
-         * already uses the same dentist, date and time.
-         *
-         * CANCELLED appointments are ignored.
-         */
-        List<Appointment> appointments =
-                repository.findAll();
+        boolean duplicate =
+                appointmentRepository
+                        .existsActiveAppointment(
+                                appointment.getDentistId(),
+                                appointment.getAppointmentDate(),
+                                appointment.getAppointmentTime()
+                        );
 
-        for (Appointment existing : appointments) {
-
-            if (existing.getId().equals(
-                    appointment.getId())) {
-
-                continue;
-            }
-
-            if (!existing.getDentistId().equals(
-                    appointment.getDentistId())) {
-
-                continue;
-            }
-
-            if (!existing.getAppointmentDate().equals(
-                    appointment.getAppointmentDate())) {
-
-                continue;
-            }
-
-            if (!existing.getAppointmentTime().equals(
-                    appointment.getAppointmentTime())) {
-
-                continue;
-            }
-
-            if ("PENDING".equalsIgnoreCase(
-                    existing.getStatus())
-                    ||
-                    "CONFIRMED".equalsIgnoreCase(
-                            existing.getStatus())) {
-
-                throw new IllegalArgumentException(
-                        "This dentist is already booked at "
-                                + appointment.getAppointmentDate()
-                                + " "
-                                + appointment.getAppointmentTime()
-                                + ". Please choose another time."
-                );
-            }
-        }
-
-        /*
-         * Keep the original appointment number.
-         */
         Appointment existing =
-                repository.findById(
+                appointmentRepository.findById(
                         appointment.getId()
                 );
 
-        if (existing == null) {
+        if (duplicate &&
+                (existing == null ||
+                        !appointment.getId()
+                                .equals(existing.getId()))) {
+
             throw new IllegalArgumentException(
-                    "Appointment not found."
+                    "This dentist already has an appointment at the selected date and time."
             );
         }
 
-        appointment.setAppointmentNumber(
-                existing.getAppointmentNumber()
-        );
+        boolean updated =
+                appointmentRepository.update(
+                        appointment
+                );
 
-        return repository.update(appointment);
+        if (!updated) {
+            throw new IllegalArgumentException(
+                    "Unable to update appointment."
+            );
+        }
     }
 
 
-    /*
-     * Cancel appointment.
-     *
-     * The appointment is NOT physically deleted.
-     * Its status becomes CANCELLED.
-     */
-    public boolean cancelAppointment(Long id)
+    // =========================================================
+    // CANCEL APPOINTMENT
+    // =========================================================
+
+    public void cancelAppointment(
+            Long id)
             throws SQLException {
 
-        if (id == null) {
+        if (id == null || id <= 0) {
             throw new IllegalArgumentException(
-                    "Appointment ID is required."
+                    "Invalid appointment ID."
             );
         }
 
         Appointment appointment =
-                repository.findById(id);
+                appointmentRepository.findById(id);
 
         if (appointment == null) {
             throw new IllegalArgumentException(
@@ -380,7 +378,7 @@ public class AppointmentService {
                 appointment.getStatus())) {
 
             throw new IllegalArgumentException(
-                    "This appointment is already cancelled."
+                    "Appointment is already cancelled."
             );
         }
 
@@ -388,23 +386,75 @@ public class AppointmentService {
                 appointment.getStatus())) {
 
             throw new IllegalArgumentException(
-                    "A completed appointment cannot be cancelled."
+                    "Completed appointment cannot be cancelled."
             );
         }
 
-        return repository.cancel(id);
+        boolean cancelled =
+                appointmentRepository.cancel(id);
+
+        if (!cancelled) {
+            throw new IllegalArgumentException(
+                    "Unable to cancel appointment."
+            );
+        }
     }
 
 
-    /*
-     * Generate unique appointment number.
-     */
-    private String generateAppointmentNumber() {
+    // =========================================================
+    // DENTIST AVAILABILITY
+    // =========================================================
 
-        return "APT-" +
-                UUID.randomUUID()
-                        .toString()
-                        .substring(0, 8)
-                        .toUpperCase();
+    private boolean isDentistAvailable(
+            Long dentistId,
+            LocalDate date,
+            LocalTime time)
+            throws SQLException {
+
+        var schedules =
+                dentistAvailabilityService
+                        .getByDentistId(dentistId);
+
+        String dayName =
+                date.getDayOfWeek()
+                        .name();
+
+        for (var schedule : schedules) {
+
+            if (schedule.getStartTime() == null ||
+                    schedule.getEndTime() == null) {
+
+                continue;
+            }
+
+            boolean correctDate =
+                    schedule.getAvailableDate() != null &&
+                            schedule.getAvailableDate()
+                                    .equals(date);
+
+            boolean correctDay =
+                    schedule.getAvailableDate() == null &&
+                            schedule.getDayOfWeek() != null &&
+                            schedule.getDayOfWeek()
+                                    .equalsIgnoreCase(
+                                            dayName
+                                    );
+
+            if (!correctDate && !correctDay) {
+                continue;
+            }
+
+            if (!time.isBefore(
+                    schedule.getStartTime()
+            ) &&
+                    time.isBefore(
+                            schedule.getEndTime()
+                    )) {
+
+                return true;
+            }
+        }
+
+        return false;
     }
 }
