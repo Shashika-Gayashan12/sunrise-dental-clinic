@@ -1,5 +1,4 @@
-
-        package com.sunrise.dentalclinic.service;
+package com.sunrise.dentalclinic.service;
 
 import com.sunrise.dentalclinic.entity.User;
 import com.sunrise.dentalclinic.repository.UserRepository;
@@ -8,6 +7,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class UserService {
+
 
     private final UserRepository userRepository;
 
@@ -18,9 +18,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       LOGIN
-       ========================= */
+/* =========================
+   LOGIN
+   ========================= */
 
     public User login(
             String username,
@@ -83,9 +83,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       CREATE USER
-       ========================= */
+/* =========================
+   CREATE USER
+   ========================= */
 
     public User createUser(
             String username,
@@ -125,9 +125,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       CREATE ADMIN
-       ========================= */
+/* =========================
+   CREATE ADMIN
+   ========================= */
 
     public User createAdmin(
             String username,
@@ -169,9 +169,63 @@ public class UserService {
     }
 
 
-    /* =========================
-       GET ALL USERS
-       ========================= */
+/* =========================
+   CREATE DENTIST ACCOUNT
+   ========================= */
+
+    public User createDentistAccount(
+            String username,
+            String password,
+            Long dentistId)
+            throws SQLException {
+
+        validateCredentials(
+                username,
+                password
+        );
+
+        if (dentistId == null ||
+                dentistId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Invalid dentist ID."
+            );
+        }
+
+        username =
+                username.trim();
+
+        User existing =
+                userRepository.findByUsername(
+                        username
+                );
+
+        if (existing != null) {
+
+            throw new IllegalArgumentException(
+                    "Username already exists."
+            );
+        }
+
+        User dentist =
+                new User(
+                        null,
+                        username,
+                        password,
+                        "DENTIST",
+                        "ACTIVE",
+                        dentistId
+                );
+
+        return userRepository.save(
+                dentist
+        );
+    }
+
+
+/* =========================
+   GET ALL USERS
+   ========================= */
 
     public List<User> getAllUsers()
             throws SQLException {
@@ -180,9 +234,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       GET USER BY ID
-       ========================= */
+/* =========================
+   GET USER BY ID
+   ========================= */
 
     public User getUserById(Long id)
             throws SQLException {
@@ -193,9 +247,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       ACTIVATE
-       ========================= */
+/* =========================
+   ACTIVATE
+   ========================= */
 
     public void activateUser(Long id)
             throws SQLException {
@@ -219,9 +273,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       DEACTIVATE
-       ========================= */
+/* =========================
+   DEACTIVATE
+   ========================= */
 
     public void deactivateUser(Long id)
             throws SQLException {
@@ -253,9 +307,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       DELETE
-       ========================= */
+/* =========================
+   DELETE
+   ========================= */
 
     public void deleteUser(Long id)
             throws SQLException {
@@ -284,9 +338,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       UPDATE ADMIN PASSWORD
-       ========================= */
+/* =========================
+   UPDATE ADMIN PASSWORD
+   ========================= */
 
     public void updateAdminPassword(
             Long id,
@@ -328,9 +382,9 @@ public class UserService {
     }
 
 
-    /* =========================
-       VALIDATION
-       ========================= */
+/* =========================
+   VALIDATION
+   ========================= */
 
     private void validateCredentials(
             String username,
@@ -365,5 +419,6 @@ public class UserService {
             );
         }
     }
-}
 
+
+}

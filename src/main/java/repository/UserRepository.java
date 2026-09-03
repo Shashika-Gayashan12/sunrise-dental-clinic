@@ -17,10 +17,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            SELECT id, username, password, role, status
-            FROM users
-            WHERE username = ?
-            """;
+        SELECT id, username, password, role, status, dentist_id
+        FROM users
+        WHERE username = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -35,13 +35,7 @@ public class UserRepository {
 
                 if (resultSet.next()) {
 
-                    return new User(
-                            resultSet.getLong("id"),
-                            resultSet.getString("username"),
-                            resultSet.getString("password"),
-                            resultSet.getString("role"),
-                            resultSet.getString("status")
-                    );
+                    return mapUser(resultSet);
                 }
             }
         }
@@ -57,10 +51,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            SELECT id, username, password, role, status
-            FROM users
-            WHERE id = ?
-            """;
+        SELECT id, username, password, role, status, dentist_id
+        FROM users
+        WHERE id = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -75,13 +69,7 @@ public class UserRepository {
 
                 if (resultSet.next()) {
 
-                    return new User(
-                            resultSet.getLong("id"),
-                            resultSet.getString("username"),
-                            resultSet.getString("password"),
-                            resultSet.getString("role"),
-                            resultSet.getString("status")
-                    );
+                    return mapUser(resultSet);
                 }
             }
         }
@@ -100,10 +88,10 @@ public class UserRepository {
                 new ArrayList<>();
 
         String sql = """
-            SELECT id, username, password, role, status
-            FROM users
-            ORDER BY id DESC
-            """;
+        SELECT id, username, password, role, status, dentist_id
+        FROM users
+        ORDER BY id DESC
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -117,13 +105,7 @@ public class UserRepository {
             while (resultSet.next()) {
 
                 User user =
-                        new User(
-                                resultSet.getLong("id"),
-                                resultSet.getString("username"),
-                                resultSet.getString("password"),
-                                resultSet.getString("role"),
-                                resultSet.getString("status")
-                        );
+                        mapUser(resultSet);
 
                 users.add(user);
             }
@@ -140,10 +122,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            INSERT INTO users
-            (username, password, role, status)
-            VALUES (?, ?, ?, ?)
-            """;
+        INSERT INTO users
+        (username, password, role, status, dentist_id)
+        VALUES (?, ?, ?, ?, ?)
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -173,6 +155,21 @@ public class UserRepository {
                     user.getStatus()
             );
 
+            if (user.getDentistId() != null) {
+
+                statement.setLong(
+                        5,
+                        user.getDentistId()
+                );
+
+            } else {
+
+                statement.setNull(
+                        5,
+                        Types.BIGINT
+                );
+            }
+
             statement.executeUpdate();
 
             try (ResultSet generatedKeys =
@@ -198,10 +195,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            INSERT INTO users
-            (username, password, role, status)
-            VALUES (?, ?, 'ADMIN', 'ACTIVE')
-            """;
+        INSERT INTO users
+        (username, password, role, status, dentist_id)
+        VALUES (?, ?, 'ADMIN', 'ACTIVE', NULL)
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -248,10 +245,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            UPDATE users
-            SET status = ?
-            WHERE id = ?
-            """;
+        UPDATE users
+        SET status = ?
+        WHERE id = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -283,10 +280,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            UPDATE users
-            SET password = ?
-            WHERE id = ?
-            """;
+        UPDATE users
+        SET password = ?
+        WHERE id = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -317,12 +314,12 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            UPDATE users
-            SET username = ?,
-                role = ?,
-                status = ?
-            WHERE id = ?
-            """;
+        UPDATE users
+        SET username = ?,
+            role = ?,
+            status = ?
+        WHERE id = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -362,9 +359,9 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-            DELETE FROM users
-            WHERE id = ?
-            """;
+        DELETE FROM users
+        WHERE id = ?
+        """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -379,6 +376,43 @@ public class UserRepository {
 
             statement.executeUpdate();
         }
+    }
+
+
+    /*
+     * ============================================================
+     * MAP DATABASE USER TO JAVA USER
+     * ============================================================
+     */
+    private User mapUser(ResultSet resultSet)
+            throws SQLException {
+
+        User user =
+                new User(
+                        resultSet.getLong("id"),
+                        resultSet.getString("username"),
+                        resultSet.getString("password"),
+                        resultSet.getString("role"),
+                        resultSet.getString("status")
+                );
+
+        /*
+         * dentist_id can be NULL for
+         * ADMIN and normal USER accounts.
+         */
+        long dentistId =
+                resultSet.getLong("dentist_id");
+
+        if (!resultSet.wasNull()) {
+
+            user.setDentistId(dentistId);
+
+        } else {
+
+            user.setDentistId(null);
+        }
+
+        return user;
     }
 
 

@@ -11,22 +11,23 @@ import java.util.List;
 
 public class AppointmentRepository {
 
+
     public Appointment save(Appointment appointment)
             throws SQLException {
 
         String sql = """
-                INSERT INTO appointments
-                (
-                    appointment_date,
-                    appointment_number,
-                    appointment_time,
-                    status,
-                    dentist_id,
-                    patient_id,
-                    treatment_id
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
+            INSERT INTO appointments
+            (
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -92,6 +93,10 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// GET ALL APPOINTMENTS
+// =========================================================
+
     public List<Appointment> findAll()
             throws SQLException {
 
@@ -99,19 +104,19 @@ public class AppointmentRepository {
                 new ArrayList<>();
 
         String sql = """
-                SELECT
-                    id,
-                    appointment_date,
-                    appointment_number,
-                    appointment_time,
-                    status,
-                    dentist_id,
-                    patient_id,
-                    treatment_id
-                FROM appointments
-                ORDER BY appointment_date DESC,
-                         appointment_time DESC
-                """;
+            SELECT
+                id,
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            FROM appointments
+            ORDER BY appointment_date DESC,
+                     appointment_time DESC
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -163,6 +168,10 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// GET APPOINTMENTS BY DATE
+// =========================================================
+
     public List<Appointment> findByDate(
             LocalDate appointmentDate)
             throws SQLException {
@@ -171,19 +180,19 @@ public class AppointmentRepository {
                 new ArrayList<>();
 
         String sql = """
-                SELECT
-                    id,
-                    appointment_date,
-                    appointment_number,
-                    appointment_time,
-                    status,
-                    dentist_id,
-                    patient_id,
-                    treatment_id
-                FROM appointments
-                WHERE appointment_date = ?
-                ORDER BY appointment_time ASC
-                """;
+            SELECT
+                id,
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            FROM appointments
+            WHERE appointment_date = ?
+            ORDER BY appointment_time ASC
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -242,11 +251,103 @@ public class AppointmentRepository {
     }
 
 
-    // =========================================================
-    // BILLING APPOINTMENTS
-    // Loads appointments for a selected date
-    // together with the patient name.
-    // =========================================================
+// =========================================================
+// GET APPOINTMENTS BY DENTIST
+// =========================================================
+//
+// This method returns ONLY appointments belonging
+// to the selected dentist.
+//
+// The dentist ID should come from the logged-in
+// dentist user's session.
+//
+// =========================================================
+
+    public List<Appointment> findByDentistId(
+            Long dentistId)
+            throws SQLException {
+
+        List<Appointment> appointments =
+                new ArrayList<>();
+
+        String sql = """
+            SELECT
+                id,
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            FROM appointments
+            WHERE dentist_id = ?
+            ORDER BY appointment_date ASC,
+                     appointment_time ASC
+            """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(
+                    1,
+                    dentistId
+            );
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                while (resultSet.next()) {
+
+                    Appointment appointment =
+                            new Appointment(
+                                    resultSet.getLong("id"),
+
+                                    resultSet.getDate(
+                                            "appointment_date"
+                                    ).toLocalDate(),
+
+                                    resultSet.getString(
+                                            "appointment_number"
+                                    ),
+
+                                    resultSet.getTime(
+                                            "appointment_time"
+                                    ).toLocalTime(),
+
+                                    resultSet.getString(
+                                            "status"
+                                    ),
+
+                                    resultSet.getLong(
+                                            "dentist_id"
+                                    ),
+
+                                    resultSet.getLong(
+                                            "patient_id"
+                                    ),
+
+                                    resultSet.getLong(
+                                            "treatment_id"
+                                    )
+                            );
+
+                    appointments.add(appointment);
+                }
+            }
+        }
+
+        return appointments;
+    }
+
+
+// =========================================================
+// BILLING APPOINTMENTS
+// Loads appointments for a selected date
+// together with the patient name.
+// =========================================================
 
     public List<AppointmentBillingInfo>
     findBillingAppointmentsByDate(
@@ -257,22 +358,22 @@ public class AppointmentRepository {
                 new ArrayList<>();
 
         String sql = """
-                SELECT
-                    a.id,
-                    a.appointment_date,
-                    a.appointment_number,
-                    a.appointment_time,
-                    a.status,
-                    a.dentist_id,
-                    a.patient_id,
-                    a.treatment_id,
-                    p.patient_name
-                FROM appointments a
-                INNER JOIN patients p
-                    ON a.patient_id = p.id
-                WHERE a.appointment_date = ?
-                ORDER BY a.appointment_time ASC
-                """;
+            SELECT
+                a.id,
+                a.appointment_date,
+                a.appointment_number,
+                a.appointment_time,
+                a.status,
+                a.dentist_id,
+                a.patient_id,
+                a.treatment_id,
+                p.patient_name
+            FROM appointments a
+            INNER JOIN patients p
+                ON a.patient_id = p.id
+            WHERE a.appointment_date = ?
+            ORDER BY a.appointment_time ASC
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -335,22 +436,26 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// GET APPOINTMENT BY ID
+// =========================================================
+
     public Appointment findById(Long id)
             throws SQLException {
 
         String sql = """
-                SELECT
-                    id,
-                    appointment_date,
-                    appointment_number,
-                    appointment_time,
-                    status,
-                    dentist_id,
-                    patient_id,
-                    treatment_id
-                FROM appointments
-                WHERE id = ?
-                """;
+            SELECT
+                id,
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            FROM appointments
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -406,23 +511,27 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// GET APPOINTMENT BY NUMBER
+// =========================================================
+
     public Appointment findByAppointmentNumber(
             String appointmentNumber)
             throws SQLException {
 
         String sql = """
-                SELECT
-                    id,
-                    appointment_date,
-                    appointment_number,
-                    appointment_time,
-                    status,
-                    dentist_id,
-                    patient_id,
-                    treatment_id
-                FROM appointments
-                WHERE appointment_number = ?
-                """;
+            SELECT
+                id,
+                appointment_date,
+                appointment_number,
+                appointment_time,
+                status,
+                dentist_id,
+                patient_id,
+                treatment_id
+            FROM appointments
+            WHERE appointment_number = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -478,20 +587,24 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// UPDATE APPOINTMENT
+// =========================================================
+
     public boolean update(Appointment appointment)
             throws SQLException {
 
         String sql = """
-                UPDATE appointments
-                SET
-                    appointment_date = ?,
-                    appointment_time = ?,
-                    status = ?,
-                    dentist_id = ?,
-                    patient_id = ?,
-                    treatment_id = ?
-                WHERE id = ?
-                """;
+            UPDATE appointments
+            SET
+                appointment_date = ?,
+                appointment_time = ?,
+                status = ?,
+                dentist_id = ?,
+                patient_id = ?,
+                treatment_id = ?
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -542,15 +655,19 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// CANCEL APPOINTMENT
+// =========================================================
+
     public boolean cancel(Long id)
             throws SQLException {
 
         String sql = """
-                UPDATE appointments
-                SET status = 'CANCELLED'
-                WHERE id = ?
-                  AND status IN ('PENDING', 'CONFIRMED')
-                """;
+            UPDATE appointments
+            SET status = 'CANCELLED'
+            WHERE id = ?
+              AND status IN ('PENDING', 'CONFIRMED')
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -567,6 +684,10 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// CHECK ACTIVE APPOINTMENT
+// =========================================================
+
     public boolean existsActiveAppointment(
             Long dentistId,
             LocalDate appointmentDate,
@@ -574,13 +695,13 @@ public class AppointmentRepository {
             throws SQLException {
 
         String sql = """
-                SELECT COUNT(*)
-                FROM appointments
-                WHERE dentist_id = ?
-                  AND appointment_date = ?
-                  AND appointment_time = ?
-                  AND status IN ('PENDING', 'CONFIRMED')
-                """;
+            SELECT COUNT(*)
+            FROM appointments
+            WHERE dentist_id = ?
+              AND appointment_date = ?
+              AND appointment_time = ?
+              AND status IN ('PENDING', 'CONFIRMED')
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -616,16 +737,20 @@ public class AppointmentRepository {
     }
 
 
+// =========================================================
+// GET LAST APPOINTMENT NUMBER
+// =========================================================
+
     public int getLastAppointmentNumber()
             throws SQLException {
 
         String sql = """
-                SELECT appointment_number
-                FROM appointments
-                WHERE appointment_number LIKE 'APT-%'
-                ORDER BY id DESC
-                LIMIT 1
-                """;
+            SELECT appointment_number
+            FROM appointments
+            WHERE appointment_number LIKE 'APT-%'
+            ORDER BY id DESC
+            LIMIT 1
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -656,4 +781,6 @@ public class AppointmentRepository {
 
         return 0;
     }
+
+
 }

@@ -2,11 +2,13 @@ package com.sunrise.dentalclinic.entity;
 
 public class User {
 
+
     private Long id;
     private String username;
     private String password;
     private String role;
     private String status;
+    private Long dentistId;
 
     public User() {
     }
@@ -23,6 +25,23 @@ public class User {
         this.password = password;
         this.role = role;
         this.status = status;
+        this.dentistId = null;
+    }
+
+    public User(
+            Long id,
+            String username,
+            String password,
+            String role,
+            String status,
+            Long dentistId) {
+
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.status = status;
+        this.dentistId = dentistId;
     }
 
     public Long getId() {
@@ -64,4 +83,14 @@ public class User {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public Long getDentistId() {
+        return dentistId;
+    }
+
+    public void setDentistId(Long dentistId) {
+        this.dentistId = dentistId;
+    }
+
+
 }

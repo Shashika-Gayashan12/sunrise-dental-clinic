@@ -11,6 +11,7 @@ import java.util.List;
 
 public class AppointmentService {
 
+
     private final AppointmentRepository appointmentRepository =
             new AppointmentRepository();
 
@@ -19,9 +20,9 @@ public class AppointmentService {
             new DentistAvailabilityService();
 
 
-    // =========================================================
-    // CREATE APPOINTMENT
-    // =========================================================
+// =========================================================
+// CREATE APPOINTMENT
+// =========================================================
 
     public Appointment createAppointment(
             Appointment appointment)
@@ -133,9 +134,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // GET ALL APPOINTMENTS
-    // =========================================================
+// =========================================================
+// GET ALL APPOINTMENTS
+// =========================================================
 
     public List<Appointment> getAllAppointments()
             throws SQLException {
@@ -144,9 +145,38 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // GET APPOINTMENTS BY DATE
-    // =========================================================
+// =========================================================
+// GET APPOINTMENTS BY DENTIST
+// =========================================================
+//
+// Used by Dentist Dashboard.
+//
+// Only appointments belonging to the logged-in
+// dentist's dentistId should be passed here.
+//
+// =========================================================
+
+    public List<Appointment> getAppointmentsByDentistId(
+            Long dentistId)
+            throws SQLException {
+
+        if (dentistId == null ||
+                dentistId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Invalid dentist ID."
+            );
+        }
+
+        return appointmentRepository.findByDentistId(
+                dentistId
+        );
+    }
+
+
+// =========================================================
+// GET APPOINTMENTS BY DATE
+// =========================================================
 
     public List<Appointment> getAppointmentsByDate(
             LocalDate appointmentDate)
@@ -164,18 +194,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // GET BILLING APPOINTMENTS BY DATE
-    // =========================================================
-    //
-    // This method returns appointments together with
-    // the patient name.
-    //
-    // Example:
-    //
-    // APT-1425975 - Kasun Perera
-    //
-    // =========================================================
+// =========================================================
+// GET BILLING APPOINTMENTS BY DATE
+// =========================================================
 
     public List<AppointmentBillingInfo>
     getBillingAppointmentsByDate(
@@ -195,9 +216,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // GET APPOINTMENT BY ID
-    // =========================================================
+// =========================================================
+// GET APPOINTMENT BY ID
+// =========================================================
 
     public Appointment getAppointmentById(
             Long id)
@@ -222,9 +243,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // GET APPOINTMENT BY NUMBER
-    // =========================================================
+// =========================================================
+// GET APPOINTMENT BY NUMBER
+// =========================================================
 
     public Appointment getAppointmentByNumber(
             String appointmentNumber)
@@ -254,9 +275,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // UPDATE APPOINTMENT
-    // =========================================================
+// =========================================================
+// UPDATE APPOINTMENT
+// =========================================================
 
     public void updateAppointment(
             Appointment appointment)
@@ -351,9 +372,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // CANCEL APPOINTMENT
-    // =========================================================
+// =========================================================
+// CANCEL APPOINTMENT
+// =========================================================
 
     public void cancelAppointment(
             Long id)
@@ -401,9 +422,9 @@ public class AppointmentService {
     }
 
 
-    // =========================================================
-    // DENTIST AVAILABILITY
-    // =========================================================
+// =========================================================
+// DENTIST AVAILABILITY
+// =========================================================
 
     private boolean isDentistAvailable(
             Long dentistId,
@@ -457,4 +478,6 @@ public class AppointmentService {
 
         return false;
     }
+
+
 }
