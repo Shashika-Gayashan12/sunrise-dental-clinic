@@ -1,4 +1,5 @@
-package com.sunrise.dentalclinic.service;
+
+        package com.sunrise.dentalclinic.service;
 
 import com.sunrise.dentalclinic.entity.User;
 import com.sunrise.dentalclinic.repository.UserRepository;
@@ -11,14 +12,16 @@ public class UserService {
     private final UserRepository userRepository;
 
     public UserService() {
-        this.userRepository = new UserRepository();
+
+        this.userRepository =
+                new UserRepository();
     }
 
-    /*
-     * LOGIN
-     *
-     * Only ACTIVE users can log in.
-     */
+
+    /* =========================
+       LOGIN
+       ========================= */
+
     public User login(
             String username,
             String password)
@@ -60,9 +63,6 @@ public class UserService {
             );
         }
 
-        /*
-         * PENDING users cannot log in.
-         */
         if (!"ACTIVE".equalsIgnoreCase(
                 user.getStatus())) {
 
@@ -82,33 +82,23 @@ public class UserService {
         return user;
     }
 
-    /*
-     * CREATE USER
-     *
-     * New users start as PENDING.
-     */
+
+    /* =========================
+       CREATE USER
+       ========================= */
+
     public User createUser(
             String username,
             String password)
             throws SQLException {
 
-        if (username == null ||
-                username.isBlank()) {
+        validateCredentials(
+                username,
+                password
+        );
 
-            throw new IllegalArgumentException(
-                    "Username is required."
-            );
-        }
-
-        if (password == null ||
-                password.isBlank()) {
-
-            throw new IllegalArgumentException(
-                    "Password is required."
-            );
-        }
-
-        username = username.trim();
+        username =
+                username.trim();
 
         User existing =
                 userRepository.findByUsername(
@@ -134,34 +124,79 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /*
-     * GET ALL USERS
-     */
+
+    /* =========================
+       CREATE ADMIN
+       ========================= */
+
+    public User createAdmin(
+            String username,
+            String password)
+            throws SQLException {
+
+        validateCredentials(
+                username,
+                password
+        );
+
+        username =
+                username.trim();
+
+        User existing =
+                userRepository.findByUsername(
+                        username
+                );
+
+        if (existing != null) {
+
+            throw new IllegalArgumentException(
+                    "Username already exists."
+            );
+        }
+
+        User admin =
+                new User(
+                        null,
+                        username,
+                        password,
+                        "ADMIN",
+                        "ACTIVE"
+                );
+
+        return userRepository.saveAdmin(
+                admin
+        );
+    }
+
+
+    /* =========================
+       GET ALL USERS
+       ========================= */
+
     public List<User> getAllUsers()
             throws SQLException {
 
         return userRepository.findAll();
     }
 
-    /*
-     * GET USER BY ID
-     */
+
+    /* =========================
+       GET USER BY ID
+       ========================= */
+
     public User getUserById(Long id)
             throws SQLException {
 
-        if (id == null || id <= 0) {
-
-            throw new IllegalArgumentException(
-                    "Invalid user ID."
-            );
-        }
+        validateUserId(id);
 
         return userRepository.findById(id);
     }
 
-    /*
-     * APPROVE USER
-     */
+
+    /* =========================
+       ACTIVATE
+       ========================= */
+
     public void activateUser(Long id)
             throws SQLException {
 
@@ -183,9 +218,11 @@ public class UserService {
         );
     }
 
-    /*
-     * DEACTIVATE USER
-     */
+
+    /* =========================
+       DEACTIVATE
+       ========================= */
+
     public void deactivateUser(Long id)
             throws SQLException {
 
@@ -201,9 +238,6 @@ public class UserService {
             );
         }
 
-        /*
-         * Prevent deactivating ADMIN.
-         */
         if ("ADMIN".equalsIgnoreCase(
                 user.getRole())) {
 
@@ -218,9 +252,11 @@ public class UserService {
         );
     }
 
-    /*
-     * DELETE USER
-     */
+
+    /* =========================
+       DELETE
+       ========================= */
+
     public void deleteUser(Long id)
             throws SQLException {
 
@@ -236,9 +272,6 @@ public class UserService {
             );
         }
 
-        /*
-         * Prevent deleting ADMIN.
-         */
         if ("ADMIN".equalsIgnoreCase(
                 user.getRole())) {
 
@@ -250,12 +283,82 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    /*
-     * Validate ID.
-     */
-    private void validateUserId(Long id) {
 
-        if (id == null || id <= 0) {
+    /* =========================
+       UPDATE ADMIN PASSWORD
+       ========================= */
+
+    public void updateAdminPassword(
+            Long id,
+            String password)
+            throws SQLException {
+
+        validateUserId(id);
+
+        if (password == null ||
+                password.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Password is required."
+            );
+        }
+
+        User user =
+                userRepository.findById(id);
+
+        if (user == null) {
+
+            throw new IllegalArgumentException(
+                    "User not found."
+            );
+        }
+
+        if (!"ADMIN".equalsIgnoreCase(
+                user.getRole())) {
+
+            throw new IllegalArgumentException(
+                    "Password can only be changed for an admin account."
+            );
+        }
+
+        userRepository.updatePassword(
+                id,
+                password
+        );
+    }
+
+
+    /* =========================
+       VALIDATION
+       ========================= */
+
+    private void validateCredentials(
+            String username,
+            String password) {
+
+        if (username == null ||
+                username.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Username is required."
+            );
+        }
+
+        if (password == null ||
+                password.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Password is required."
+            );
+        }
+    }
+
+
+    private void validateUserId(
+            Long id) {
+
+        if (id == null ||
+                id <= 0) {
 
             throw new IllegalArgumentException(
                     "Invalid user ID."
@@ -263,3 +366,4 @@ public class UserService {
         }
     }
 }
+

@@ -9,6 +9,7 @@ import java.util.List;
 
 public class UserRepository {
 
+
     /*
      * Find user by username.
      */
@@ -16,10 +17,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                SELECT id, username, password, role, status
-                FROM users
-                WHERE username = ?
-                """;
+            SELECT id, username, password, role, status
+            FROM users
+            WHERE username = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -48,6 +49,7 @@ public class UserRepository {
         return null;
     }
 
+
     /*
      * Find user by ID.
      */
@@ -55,10 +57,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                SELECT id, username, password, role, status
-                FROM users
-                WHERE id = ?
-                """;
+            SELECT id, username, password, role, status
+            FROM users
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -87,19 +89,21 @@ public class UserRepository {
         return null;
     }
 
+
     /*
      * Get all users.
      */
     public List<User> findAll()
             throws SQLException {
 
-        List<User> users = new ArrayList<>();
+        List<User> users =
+                new ArrayList<>();
 
         String sql = """
-                SELECT id, username, password, role, status
-                FROM users
-                ORDER BY id DESC
-                """;
+            SELECT id, username, password, role, status
+            FROM users
+            ORDER BY id DESC
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -112,13 +116,14 @@ public class UserRepository {
 
             while (resultSet.next()) {
 
-                User user = new User(
-                        resultSet.getLong("id"),
-                        resultSet.getString("username"),
-                        resultSet.getString("password"),
-                        resultSet.getString("role"),
-                        resultSet.getString("status")
-                );
+                User user =
+                        new User(
+                                resultSet.getLong("id"),
+                                resultSet.getString("username"),
+                                resultSet.getString("password"),
+                                resultSet.getString("role"),
+                                resultSet.getString("status")
+                        );
 
                 users.add(user);
             }
@@ -127,6 +132,7 @@ public class UserRepository {
         return users;
     }
 
+
     /*
      * Save a new user.
      */
@@ -134,10 +140,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                INSERT INTO users
-                (username, password, role, status)
-                VALUES (?, ?, ?, ?)
-                """;
+            INSERT INTO users
+            (username, password, role, status)
+            VALUES (?, ?, ?, ?)
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -184,6 +190,55 @@ public class UserRepository {
         return user;
     }
 
+
+    /*
+     * Save a new admin.
+     */
+    public User saveAdmin(User user)
+            throws SQLException {
+
+        String sql = """
+            INSERT INTO users
+            (username, password, role, status)
+            VALUES (?, ?, 'ADMIN', 'ACTIVE')
+            """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+
+             PreparedStatement statement =
+                     connection.prepareStatement(
+                             sql,
+                             Statement.RETURN_GENERATED_KEYS)) {
+
+            statement.setString(
+                    1,
+                    user.getUsername()
+            );
+
+            statement.setString(
+                    2,
+                    user.getPassword()
+            );
+
+            statement.executeUpdate();
+
+            try (ResultSet generatedKeys =
+                         statement.getGeneratedKeys()) {
+
+                if (generatedKeys.next()) {
+
+                    user.setId(
+                            generatedKeys.getLong(1)
+                    );
+                }
+            }
+        }
+
+        return user;
+    }
+
+
     /*
      * Update user status.
      */
@@ -193,10 +248,10 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                UPDATE users
-                SET status = ?
-                WHERE id = ?
-                """;
+            UPDATE users
+            SET status = ?
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -204,12 +259,55 @@ public class UserRepository {
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
-            statement.setString(1, status);
-            statement.setLong(2, id);
+            statement.setString(
+                    1,
+                    status
+            );
+
+            statement.setLong(
+                    2,
+                    id
+            );
 
             statement.executeUpdate();
         }
     }
+
+
+    /*
+     * Update admin password.
+     */
+    public void updatePassword(
+            Long id,
+            String password)
+            throws SQLException {
+
+        String sql = """
+            UPDATE users
+            SET password = ?
+            WHERE id = ?
+            """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setString(
+                    1,
+                    password
+            );
+
+            statement.setLong(
+                    2,
+                    id
+            );
+
+            statement.executeUpdate();
+        }
+    }
+
 
     /*
      * Update username, role and status.
@@ -219,12 +317,12 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                UPDATE users
-                SET username = ?,
-                    role = ?,
-                    status = ?
-                WHERE id = ?
-                """;
+            UPDATE users
+            SET username = ?,
+                role = ?,
+                status = ?
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -256,6 +354,7 @@ public class UserRepository {
         }
     }
 
+
     /*
      * Delete user.
      */
@@ -263,9 +362,9 @@ public class UserRepository {
             throws SQLException {
 
         String sql = """
-                DELETE FROM users
-                WHERE id = ?
-                """;
+            DELETE FROM users
+            WHERE id = ?
+            """;
 
         try (Connection connection =
                      DatabaseConnection.getConnection();
@@ -273,9 +372,14 @@ public class UserRepository {
              PreparedStatement statement =
                      connection.prepareStatement(sql)) {
 
-            statement.setLong(1, id);
+            statement.setLong(
+                    1,
+                    id
+            );
 
             statement.executeUpdate();
         }
     }
+
+
 }
