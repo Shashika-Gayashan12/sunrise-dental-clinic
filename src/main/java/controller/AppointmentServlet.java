@@ -19,6 +19,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -27,7 +29,6 @@ import java.util.List;
 
 @WebServlet("/appointments")
 public class AppointmentServlet extends HttpServlet {
-
 
     private final AppointmentService appointmentService =
             new AppointmentService();
@@ -490,13 +491,30 @@ public class AppointmentServlet extends HttpServlet {
                     appointmentTime
             );
 
-            appointmentService.createAppointment(
-                    appointment
-            );
+            // Create appointment
+            Appointment savedAppointment =
+                    appointmentService.createAppointment(
+                            appointment
+                    );
 
+            // Get generated appointment number
+            String appointmentNumber =
+                    savedAppointment.getAppointmentNumber();
+
+            // Create success message
+            String successMessage =
+                    "Appointment " +
+                            appointmentNumber +
+                            " added successfully!";
+
+            // Redirect with success message
             response.sendRedirect(
                     request.getContextPath()
-                            + "/appointments"
+                            + "/appointments?success="
+                            + URLEncoder.encode(
+                            successMessage,
+                            StandardCharsets.UTF_8
+                    )
             );
 
         } catch (NumberFormatException e) {
@@ -607,7 +625,6 @@ public class AppointmentServlet extends HttpServlet {
 
             List<Appointment> filteredAppointments =
                     new ArrayList<>();
-
 
             if (appointments != null) {
 
@@ -751,6 +768,4 @@ public class AppointmentServlet extends HttpServlet {
             );
         }
     }
-
-
 }

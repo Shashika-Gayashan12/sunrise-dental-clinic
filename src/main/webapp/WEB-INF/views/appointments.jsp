@@ -27,6 +27,9 @@
     String error =
             (String) request.getAttribute("error");
 
+    String successMessage =
+            request.getParameter("success");
+
     User user =
             (User) session.getAttribute("loggedInUser");
 
@@ -359,6 +362,129 @@ body {
 
 
 /* =========================================================
+   SUCCESS TOAST
+   ========================================================= */
+
+.success-toast {
+    position: fixed;
+
+    top: 25px;
+
+    right: 25px;
+
+    min-width: 330px;
+
+    max-width: 450px;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+
+    padding: 16px 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.15);
+
+    border-left: 5px solid #198754;
+
+    z-index: 99999;
+
+    animation: successSlideIn 0.4s ease;
+}
+
+.success-icon {
+    width: 32px;
+
+    height: 32px;
+
+    min-width: 32px;
+
+    border-radius: 50%;
+
+    background: #198754;
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-size: 18px;
+
+    font-weight: bold;
+}
+
+.success-title {
+    font-size: 15px;
+
+    font-weight: 700;
+
+    color: #198754;
+
+    margin-bottom: 3px;
+}
+
+.success-message {
+    font-size: 14px;
+
+    color: #444;
+}
+
+.success-close {
+    margin-left: auto;
+
+    border: none;
+
+    background: transparent;
+
+    font-size: 22px;
+
+    color: #888;
+
+    cursor: pointer;
+
+    padding: 0 4px;
+}
+
+.success-close:hover {
+    color: #333;
+}
+
+.success-toast.hide {
+    opacity: 0;
+
+    transform: translateX(30px);
+
+    transition:
+        opacity 0.4s ease,
+        transform 0.4s ease;
+}
+
+@keyframes successSlideIn {
+
+    from {
+        opacity: 0;
+
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+
+        transform: translateX(0);
+    }
+}
+
+
+/* =========================================================
    FILTERS
    ========================================================= */
 
@@ -641,6 +767,18 @@ footer {
         display: none;
     }
 
+    .success-toast {
+        left: 15px;
+
+        right: 15px;
+
+        top: 15px;
+
+        min-width: unset;
+
+        max-width: none;
+    }
+
 }
 
 </style>
@@ -649,6 +787,79 @@ footer {
 
 
 <body>
+
+
+<!-- =========================================================
+     SUCCESS TOAST
+     ========================================================= -->
+
+<%
+    if (successMessage != null && !successMessage.isBlank()) {
+%>
+
+<div id="successToast"
+     class="success-toast">
+
+    <div class="success-icon">
+        ✓
+    </div>
+
+    <div>
+
+        <div class="success-title">
+            Success
+        </div>
+
+        <div class="success-message">
+            <%= successMessage %>
+        </div>
+
+    </div>
+
+    <button type="button"
+            class="success-close"
+            onclick="closeSuccessToast()">
+
+        ×
+
+    </button>
+
+</div>
+
+<script>
+
+function closeSuccessToast() {
+
+    const toast =
+        document.getElementById("successToast");
+
+    if (toast) {
+
+        toast.classList.add("hide");
+
+        setTimeout(function () {
+
+            toast.remove();
+
+        }, 400);
+
+    }
+}
+
+
+/* Automatically hide after 3.5 seconds */
+
+setTimeout(function () {
+
+    closeSuccessToast();
+
+}, 3500);
+
+</script>
+
+<%
+    }
+%>
 
 
 <!-- =========================================================
