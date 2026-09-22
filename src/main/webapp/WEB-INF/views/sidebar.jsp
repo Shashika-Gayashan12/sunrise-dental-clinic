@@ -1,3 +1,4 @@
+
 <%@ page import="com.sunrise.dentalclinic.entity.User" %>
 
 <%
@@ -41,6 +42,9 @@
 
     boolean billsActive =
             currentPath.endsWith("/bills");
+
+    boolean helpActive =
+            currentPath.endsWith("/help");
 
     boolean manageUsersActive =
             currentPath.endsWith("/manage-users");
@@ -687,7 +691,51 @@
         </a>
 
 
-        <!-- ADMINISTRATION -->
+        <!-- =====================================================
+             HELP
+             ===================================================== -->
+
+        <a
+                href="<%= sidebarContextPath %>/help"
+                class="nav-item <%= helpActive ? "active" : "" %>"
+        >
+
+            <span class="nav-icon">
+
+                <svg viewBox="0 0 24 24">
+
+                    <circle
+                            cx="12"
+                            cy="12"
+                            r="9"
+                    />
+
+                    <path
+                            d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 2-2.5 3.5"
+                    />
+
+                    <line
+                            x1="12"
+                            y1="16.5"
+                            x2="12"
+                            y2="16.5"
+                    />
+
+                </svg>
+
+            </span>
+
+            <span class="nav-label">
+                Help
+            </span>
+
+        </a>
+
+
+        <!-- =====================================================
+             ADMINISTRATION
+             ===================================================== -->
+
         <% if ("ADMIN".equalsIgnoreCase(sidebarRole)) { %>
 
             <div class="admin-section">
@@ -801,3 +849,4 @@
     </div>
 
 </aside>
+

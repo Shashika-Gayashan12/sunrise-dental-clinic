@@ -847,8 +847,6 @@ function closeSuccessToast() {
 }
 
 
-/* Automatically hide after 3.5 seconds */
-
 setTimeout(function () {
 
     closeSuccessToast();
@@ -1092,17 +1090,33 @@ setTimeout(function () {
 </div>
 
 
-<!-- TIME -->
+<!-- START TIME -->
 
 <div class="form-group">
 
 <label>
-    Appointment Time
+    Start Time
 </label>
 
 <input
     type="time"
     name="appointmentTime"
+    required>
+
+</div>
+
+
+<!-- END TIME -->
+
+<div class="form-group">
+
+<label>
+    End Time
+</label>
+
+<input
+    type="time"
+    name="appointmentEndTime"
     required>
 
 </div>
@@ -1483,6 +1497,18 @@ Treatment #<%= appointment.getTreatmentId() %>
 %>
 
 <%= appointment.getAppointmentTime()
+        .toString()
+        .substring(0, 5) %>
+
+<%
+    }
+
+    if (appointment.getAppointmentEndTime() != null) {
+%>
+
+ -
+
+<%= appointment.getAppointmentEndTime()
         .toString()
         .substring(0, 5) %>
 

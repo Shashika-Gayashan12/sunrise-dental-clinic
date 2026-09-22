@@ -11,7 +11,6 @@ import java.util.List;
 
 public class AppointmentService {
 
-
     private final AppointmentRepository appointmentRepository =
             new AppointmentRepository();
 
@@ -42,7 +41,22 @@ public class AppointmentService {
 
         if (appointment.getAppointmentTime() == null) {
             throw new IllegalArgumentException(
-                    "Appointment time is required."
+                    "Appointment start time is required."
+            );
+        }
+
+        if (appointment.getAppointmentEndTime() == null) {
+            throw new IllegalArgumentException(
+                    "Appointment end time is required."
+            );
+        }
+
+        // End time must be after start time
+        if (!appointment.getAppointmentEndTime()
+                .isAfter(appointment.getAppointmentTime())) {
+
+            throw new IllegalArgumentException(
+                    "Appointment end time must be after start time."
             );
         }
 
@@ -78,30 +92,34 @@ public class AppointmentService {
             );
         }
 
+        // Check dentist working/available schedule
         boolean available =
                 isDentistAvailable(
                         appointment.getDentistId(),
                         appointment.getAppointmentDate(),
-                        appointment.getAppointmentTime()
+                        appointment.getAppointmentTime(),
+                        appointment.getAppointmentEndTime()
                 );
 
         if (!available) {
             throw new IllegalArgumentException(
-                    "Dentist is not available at the selected date and time."
+                    "Dentist is not available for the selected date and time range."
             );
         }
 
-        boolean alreadyExists =
+        // Check overlapping appointments
+        boolean overlapping =
                 appointmentRepository
-                        .existsActiveAppointment(
+                        .existsOverlappingAppointment(
                                 appointment.getDentistId(),
                                 appointment.getAppointmentDate(),
-                                appointment.getAppointmentTime()
+                                appointment.getAppointmentTime(),
+                                appointment.getAppointmentEndTime()
                         );
 
-        if (alreadyExists) {
+        if (overlapping) {
             throw new IllegalArgumentException(
-                    "This dentist already has an appointment at the selected date and time."
+                    "This dentist already has an appointment during the selected time."
             );
         }
 
@@ -147,13 +165,6 @@ public class AppointmentService {
 
 // =========================================================
 // GET APPOINTMENTS BY DENTIST
-// =========================================================
-//
-// Used by Dentist Dashboard.
-//
-// Only appointments belonging to the logged-in
-// dentist's dentistId should be passed here.
-//
 // =========================================================
 
     public List<Appointment> getAppointmentsByDentistId(
@@ -300,7 +311,22 @@ public class AppointmentService {
 
         if (appointment.getAppointmentTime() == null) {
             throw new IllegalArgumentException(
-                    "Appointment time is required."
+                    "Appointment start time is required."
+            );
+        }
+
+        if (appointment.getAppointmentEndTime() == null) {
+            throw new IllegalArgumentException(
+                    "Appointment end time is required."
+            );
+        }
+
+        // End time must be after start time
+        if (!appointment.getAppointmentEndTime()
+                .isAfter(appointment.getAppointmentTime())) {
+
+            throw new IllegalArgumentException(
+                    "Appointment end time must be after start time."
             );
         }
 
@@ -336,27 +362,96 @@ public class AppointmentService {
             );
         }
 
-        boolean duplicate =
-                appointmentRepository
-                        .existsActiveAppointment(
-                                appointment.getDentistId(),
-                                appointment.getAppointmentDate(),
-                                appointment.getAppointmentTime()
-                        );
+        // Check dentist working/available schedule
+        boolean available =
+                isDentistAvailable(
+                        appointment.getDentistId(),
+                        appointment.getAppointmentDate(),
+                        appointment.getAppointmentTime(),
+                        appointment.getAppointmentEndTime()
+                );
 
+        if (!available) {
+            throw new IllegalArgumentException(
+                    "Dentist is not available for the selected date and time range."
+            );
+        }
+
+        // Get existing appointment first
         Appointment existing =
                 appointmentRepository.findById(
                         appointment.getId()
                 );
 
-        if (duplicate &&
-                (existing == null ||
-                        !appointment.getId()
-                                .equals(existing.getId()))) {
-
+        if (existing == null) {
             throw new IllegalArgumentException(
-                    "This dentist already has an appointment at the selected date and time."
+                    "Appointment not found."
             );
+        }
+
+        // Check overlapping appointments
+        boolean overlapping =
+                appointmentRepository
+                        .existsOverlappingAppointment(
+                                appointment.getDentistId(),
+                                appointment.getAppointmentDate(),
+                                appointment.getAppointmentTime(),
+                                appointment.getAppointmentEndTime()
+                        );
+
+        /*
+         * If the overlap found is the same appointment
+         * being edited, it should not block the update.
+         */
+        if (overlapping) {
+
+            List<Appointment> appointments =
+                    appointmentRepository.findByDentistId(
+                            appointment.getDentistId()
+                    );
+
+            for (Appointment other : appointments) {
+
+                if (other.getId() == null ||
+                        other.getId().equals(
+                                appointment.getId()
+                        )) {
+
+                    continue;
+                }
+
+                if (other.getAppointmentDate() == null ||
+                        other.getAppointmentTime() == null ||
+                        other.getAppointmentEndTime() == null) {
+
+                    continue;
+                }
+
+                if (!other.getAppointmentDate()
+                        .equals(
+                                appointment.getAppointmentDate()
+                        )) {
+
+                    continue;
+                }
+
+                boolean timeOverlap =
+                        other.getAppointmentTime()
+                                .isBefore(
+                                        appointment.getAppointmentEndTime()
+                                )
+                                &&
+                                other.getAppointmentEndTime()
+                                        .isAfter(
+                                                appointment.getAppointmentTime()
+                                        );
+
+                if (timeOverlap) {
+                    throw new IllegalArgumentException(
+                            "This dentist already has an appointment during the selected time."
+                    );
+                }
+            }
         }
 
         boolean updated =
@@ -429,7 +524,8 @@ public class AppointmentService {
     private boolean isDentistAvailable(
             Long dentistId,
             LocalDate date,
-            LocalTime time)
+            LocalTime startTime,
+            LocalTime endTime)
             throws SQLException {
 
         var schedules =
@@ -465,19 +561,33 @@ public class AppointmentService {
                 continue;
             }
 
-            if (!time.isBefore(
-                    schedule.getStartTime()
-            ) &&
-                    time.isBefore(
-                            schedule.getEndTime()
-                    )) {
+            /*
+             * The complete appointment range must fit
+             * inside the dentist's available schedule.
+             *
+             * Example:
+             *
+             * Dentist available: 09:00 - 17:00
+             *
+             * Appointment: 10:00 - 11:00  -> allowed
+             * Appointment: 16:30 - 17:30  -> rejected
+             */
+            boolean startIsValid =
+                    !startTime.isBefore(
+                            schedule.getStartTime()
+                    );
 
+            boolean endIsValid =
+                    !endTime.isAfter(
+                            schedule.getEndTime()
+                    );
+
+            if (startIsValid && endIsValid) {
                 return true;
             }
         }
 
         return false;
     }
-
 
 }

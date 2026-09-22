@@ -1,4 +1,5 @@
-package com.sunrise.dentalclinic.repository;
+
+        package com.sunrise.dentalclinic.repository;
 
 import com.sunrise.dentalclinic.config.DatabaseConnection;
 import com.sunrise.dentalclinic.entity.Appointment;
@@ -6,11 +7,15 @@ import com.sunrise.dentalclinic.entity.AppointmentBillingInfo;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AppointmentRepository {
 
+    // =========================================================
+    // SAVE APPOINTMENT
+    // =========================================================
 
     public Appointment save(Appointment appointment)
             throws SQLException {
@@ -21,12 +26,13 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
                 treatment_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (Connection connection =
@@ -55,23 +61,30 @@ public class AppointmentRepository {
                     )
             );
 
-            statement.setString(
+            statement.setTime(
                     4,
+                    Time.valueOf(
+                            appointment.getAppointmentEndTime()
+                    )
+            );
+
+            statement.setString(
+                    5,
                     appointment.getStatus()
             );
 
             statement.setLong(
-                    5,
+                    6,
                     appointment.getDentistId()
             );
 
             statement.setLong(
-                    6,
+                    7,
                     appointment.getPatientId()
             );
 
             statement.setLong(
-                    7,
+                    8,
                     appointment.getTreatmentId()
             );
 
@@ -81,7 +94,6 @@ public class AppointmentRepository {
                          statement.getGeneratedKeys()) {
 
                 if (keys.next()) {
-
                     appointment.setId(
                             keys.getLong(1)
                     );
@@ -93,9 +105,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET ALL APPOINTMENTS
-// =========================================================
+    // =========================================================
+    // GET ALL APPOINTMENTS
+    // =========================================================
 
     public List<Appointment> findAll()
             throws SQLException {
@@ -109,6 +121,7 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
@@ -127,40 +140,9 @@ public class AppointmentRepository {
 
             while (resultSet.next()) {
 
-                Appointment appointment =
-                        new Appointment(
-                                resultSet.getLong("id"),
-
-                                resultSet.getDate(
-                                        "appointment_date"
-                                ).toLocalDate(),
-
-                                resultSet.getString(
-                                        "appointment_number"
-                                ),
-
-                                resultSet.getTime(
-                                        "appointment_time"
-                                ).toLocalTime(),
-
-                                resultSet.getString(
-                                        "status"
-                                ),
-
-                                resultSet.getLong(
-                                        "dentist_id"
-                                ),
-
-                                resultSet.getLong(
-                                        "patient_id"
-                                ),
-
-                                resultSet.getLong(
-                                        "treatment_id"
-                                )
-                        );
-
-                appointments.add(appointment);
+                appointments.add(
+                        mapAppointment(resultSet)
+                );
             }
         }
 
@@ -168,9 +150,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET APPOINTMENTS BY DATE
-// =========================================================
+    // =========================================================
+    // GET APPOINTMENTS BY DATE
+    // =========================================================
 
     public List<Appointment> findByDate(
             LocalDate appointmentDate)
@@ -185,6 +167,7 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
@@ -209,40 +192,9 @@ public class AppointmentRepository {
 
                 while (resultSet.next()) {
 
-                    Appointment appointment =
-                            new Appointment(
-                                    resultSet.getLong("id"),
-
-                                    resultSet.getDate(
-                                            "appointment_date"
-                                    ).toLocalDate(),
-
-                                    resultSet.getString(
-                                            "appointment_number"
-                                    ),
-
-                                    resultSet.getTime(
-                                            "appointment_time"
-                                    ).toLocalTime(),
-
-                                    resultSet.getString(
-                                            "status"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "dentist_id"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "patient_id"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "treatment_id"
-                                    )
-                            );
-
-                    appointments.add(appointment);
+                    appointments.add(
+                            mapAppointment(resultSet)
+                    );
                 }
             }
         }
@@ -251,17 +203,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET APPOINTMENTS BY DENTIST
-// =========================================================
-//
-// This method returns ONLY appointments belonging
-// to the selected dentist.
-//
-// The dentist ID should come from the logged-in
-// dentist user's session.
-//
-// =========================================================
+    // =========================================================
+    // GET APPOINTMENTS BY DENTIST
+    // =========================================================
 
     public List<Appointment> findByDentistId(
             Long dentistId)
@@ -276,6 +220,7 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
@@ -301,40 +246,9 @@ public class AppointmentRepository {
 
                 while (resultSet.next()) {
 
-                    Appointment appointment =
-                            new Appointment(
-                                    resultSet.getLong("id"),
-
-                                    resultSet.getDate(
-                                            "appointment_date"
-                                    ).toLocalDate(),
-
-                                    resultSet.getString(
-                                            "appointment_number"
-                                    ),
-
-                                    resultSet.getTime(
-                                            "appointment_time"
-                                    ).toLocalTime(),
-
-                                    resultSet.getString(
-                                            "status"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "dentist_id"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "patient_id"
-                                    ),
-
-                                    resultSet.getLong(
-                                            "treatment_id"
-                                    )
-                            );
-
-                    appointments.add(appointment);
+                    appointments.add(
+                            mapAppointment(resultSet)
+                    );
                 }
             }
         }
@@ -343,11 +257,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// BILLING APPOINTMENTS
-// Loads appointments for a selected date
-// together with the patient name.
-// =========================================================
+    // =========================================================
+    // BILLING APPOINTMENTS
+    // =========================================================
 
     public List<AppointmentBillingInfo>
     findBillingAppointmentsByDate(
@@ -363,6 +275,7 @@ public class AppointmentRepository {
                 a.appointment_date,
                 a.appointment_number,
                 a.appointment_time,
+                a.appointment_end_time,
                 a.status,
                 a.dentist_id,
                 a.patient_id,
@@ -389,6 +302,14 @@ public class AppointmentRepository {
                          statement.executeQuery()) {
 
                 while (resultSet.next()) {
+
+                    /*
+                     * IMPORTANT:
+                     * AppointmentBillingInfo currently has
+                     * no end-time parameter in the project.
+                     * Therefore we continue using its existing
+                     * constructor structure here.
+                     */
 
                     AppointmentBillingInfo appointment =
                             new AppointmentBillingInfo(
@@ -436,9 +357,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET APPOINTMENT BY ID
-// =========================================================
+    // =========================================================
+    // GET APPOINTMENT BY ID
+    // =========================================================
 
     public Appointment findById(Long id)
             throws SQLException {
@@ -449,6 +370,7 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
@@ -471,38 +393,7 @@ public class AppointmentRepository {
                          statement.executeQuery()) {
 
                 if (resultSet.next()) {
-
-                    return new Appointment(
-                            resultSet.getLong("id"),
-
-                            resultSet.getDate(
-                                    "appointment_date"
-                            ).toLocalDate(),
-
-                            resultSet.getString(
-                                    "appointment_number"
-                            ),
-
-                            resultSet.getTime(
-                                    "appointment_time"
-                            ).toLocalTime(),
-
-                            resultSet.getString(
-                                    "status"
-                            ),
-
-                            resultSet.getLong(
-                                    "dentist_id"
-                            ),
-
-                            resultSet.getLong(
-                                    "patient_id"
-                            ),
-
-                            resultSet.getLong(
-                                    "treatment_id"
-                            )
-                    );
+                    return mapAppointment(resultSet);
                 }
             }
         }
@@ -511,9 +402,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET APPOINTMENT BY NUMBER
-// =========================================================
+    // =========================================================
+    // GET APPOINTMENT BY NUMBER
+    // =========================================================
 
     public Appointment findByAppointmentNumber(
             String appointmentNumber)
@@ -525,6 +416,7 @@ public class AppointmentRepository {
                 appointment_date,
                 appointment_number,
                 appointment_time,
+                appointment_end_time,
                 status,
                 dentist_id,
                 patient_id,
@@ -547,38 +439,7 @@ public class AppointmentRepository {
                          statement.executeQuery()) {
 
                 if (resultSet.next()) {
-
-                    return new Appointment(
-                            resultSet.getLong("id"),
-
-                            resultSet.getDate(
-                                    "appointment_date"
-                            ).toLocalDate(),
-
-                            resultSet.getString(
-                                    "appointment_number"
-                            ),
-
-                            resultSet.getTime(
-                                    "appointment_time"
-                            ).toLocalTime(),
-
-                            resultSet.getString(
-                                    "status"
-                            ),
-
-                            resultSet.getLong(
-                                    "dentist_id"
-                            ),
-
-                            resultSet.getLong(
-                                    "patient_id"
-                            ),
-
-                            resultSet.getLong(
-                                    "treatment_id"
-                            )
-                    );
+                    return mapAppointment(resultSet);
                 }
             }
         }
@@ -587,9 +448,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// UPDATE APPOINTMENT
-// =========================================================
+    // =========================================================
+    // UPDATE APPOINTMENT
+    // =========================================================
 
     public boolean update(Appointment appointment)
             throws SQLException {
@@ -599,6 +460,7 @@ public class AppointmentRepository {
             SET
                 appointment_date = ?,
                 appointment_time = ?,
+                appointment_end_time = ?,
                 status = ?,
                 dentist_id = ?,
                 patient_id = ?,
@@ -625,28 +487,35 @@ public class AppointmentRepository {
                     )
             );
 
-            statement.setString(
+            statement.setTime(
                     3,
+                    Time.valueOf(
+                            appointment.getAppointmentEndTime()
+                    )
+            );
+
+            statement.setString(
+                    4,
                     appointment.getStatus()
             );
 
             statement.setLong(
-                    4,
+                    5,
                     appointment.getDentistId()
             );
 
             statement.setLong(
-                    5,
+                    6,
                     appointment.getPatientId()
             );
 
             statement.setLong(
-                    6,
+                    7,
                     appointment.getTreatmentId()
             );
 
             statement.setLong(
-                    7,
+                    8,
                     appointment.getId()
             );
 
@@ -655,9 +524,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// CANCEL APPOINTMENT
-// =========================================================
+    // =========================================================
+    // CANCEL APPOINTMENT
+    // =========================================================
 
     public boolean cancel(Long id)
             throws SQLException {
@@ -684,14 +553,105 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// CHECK ACTIVE APPOINTMENT
-// =========================================================
+    // =========================================================
+    // CHECK OVERLAPPING ACTIVE APPOINTMENT
+    // =========================================================
+    //
+    // Existing appointment:
+    //     10:00 - 11:00
+    //
+    // New appointment:
+    //     10:30 - 11:30
+    //
+    // Result:
+    //     TRUE -> overlap -> NOT AVAILABLE
+    //
+    // Existing:
+    //     10:00 - 11:00
+    //
+    // New:
+    //     11:00 - 12:00
+    //
+    // Result:
+    //     FALSE -> no overlap -> AVAILABLE
+    //
+    // =========================================================
+
+    public boolean existsOverlappingAppointment(
+            Long dentistId,
+            LocalDate appointmentDate,
+            LocalTime appointmentStartTime,
+            LocalTime appointmentEndTime)
+            throws SQLException {
+
+        String sql = """
+            SELECT COUNT(*)
+            FROM appointments
+            WHERE dentist_id = ?
+              AND appointment_date = ?
+              AND status IN ('PENDING', 'CONFIRMED')
+              AND appointment_time < ?
+              AND appointment_end_time > ?
+            """;
+
+        try (Connection connection =
+                     DatabaseConnection.getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(sql)) {
+
+            statement.setLong(
+                    1,
+                    dentistId
+            );
+
+            statement.setDate(
+                    2,
+                    Date.valueOf(appointmentDate)
+            );
+
+            /*
+             * Existing appointment START < New appointment END
+             */
+            statement.setTime(
+                    3,
+                    Time.valueOf(appointmentEndTime)
+            );
+
+            /*
+             * Existing appointment END > New appointment START
+             */
+            statement.setTime(
+                    4,
+                    Time.valueOf(appointmentStartTime)
+            );
+
+            try (ResultSet resultSet =
+                         statement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    return resultSet.getInt(1) > 0;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // =========================================================
+    // OLD EXACT-TIME CHECK
+    // =========================================================
+    //
+    // Kept for compatibility with existing code.
+    // The new AppointmentService should use
+    // existsOverlappingAppointment() instead.
+    //
+    // =========================================================
 
     public boolean existsActiveAppointment(
             Long dentistId,
             LocalDate appointmentDate,
-            java.time.LocalTime appointmentTime)
+            LocalTime appointmentTime)
             throws SQLException {
 
         String sql = """
@@ -727,7 +687,6 @@ public class AppointmentRepository {
                          statement.executeQuery()) {
 
                 if (resultSet.next()) {
-
                     return resultSet.getInt(1) > 0;
                 }
             }
@@ -737,9 +696,9 @@ public class AppointmentRepository {
     }
 
 
-// =========================================================
-// GET LAST APPOINTMENT NUMBER
-// =========================================================
+    // =========================================================
+    // GET LAST APPOINTMENT NUMBER
+    // =========================================================
 
     public int getLastAppointmentNumber()
             throws SQLException {
@@ -783,4 +742,74 @@ public class AppointmentRepository {
     }
 
 
+    // =========================================================
+    // MAP RESULTSET TO APPOINTMENT
+    // =========================================================
+
+    private Appointment mapAppointment(
+            ResultSet resultSet)
+            throws SQLException {
+
+        Appointment appointment =
+                new Appointment();
+
+        appointment.setId(
+                resultSet.getLong("id")
+        );
+
+        appointment.setAppointmentDate(
+                resultSet.getDate(
+                        "appointment_date"
+                ).toLocalDate()
+        );
+
+        appointment.setAppointmentNumber(
+                resultSet.getString(
+                        "appointment_number"
+                )
+        );
+
+        appointment.setAppointmentTime(
+                resultSet.getTime(
+                        "appointment_time"
+                ).toLocalTime()
+        );
+
+        Time endTime =
+                resultSet.getTime(
+                        "appointment_end_time"
+                );
+
+        if (endTime != null) {
+            appointment.setAppointmentEndTime(
+                    endTime.toLocalTime()
+            );
+        }
+
+        appointment.setStatus(
+                resultSet.getString(
+                        "status"
+                )
+        );
+
+        appointment.setDentistId(
+                resultSet.getLong(
+                        "dentist_id"
+                )
+        );
+
+        appointment.setPatientId(
+                resultSet.getLong(
+                        "patient_id"
+                )
+        );
+
+        appointment.setTreatmentId(
+                resultSet.getLong(
+                        "treatment_id"
+                )
+        );
+
+        return appointment;
+    }
 }

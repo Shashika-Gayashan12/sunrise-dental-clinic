@@ -1,4 +1,5 @@
-package com.sunrise.dentalclinic.entity;
+
+        package com.sunrise.dentalclinic.entity;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -9,6 +10,7 @@ public class Appointment {
     private LocalDate appointmentDate;
     private String appointmentNumber;
     private LocalTime appointmentTime;
+    private LocalTime appointmentEndTime;
     private String status;
     private Long dentistId;
     private Long patientId;
@@ -22,6 +24,7 @@ public class Appointment {
             LocalDate appointmentDate,
             String appointmentNumber,
             LocalTime appointmentTime,
+            LocalTime appointmentEndTime,
             String status,
             Long dentistId,
             Long patientId,
@@ -31,6 +34,7 @@ public class Appointment {
         this.appointmentDate = appointmentDate;
         this.appointmentNumber = appointmentNumber;
         this.appointmentTime = appointmentTime;
+        this.appointmentEndTime = appointmentEndTime;
         this.status = status;
         this.dentistId = dentistId;
         this.patientId = patientId;
@@ -69,6 +73,14 @@ public class Appointment {
         this.appointmentTime = appointmentTime;
     }
 
+    public LocalTime getAppointmentEndTime() {
+        return appointmentEndTime;
+    }
+
+    public void setAppointmentEndTime(LocalTime appointmentEndTime) {
+        this.appointmentEndTime = appointmentEndTime;
+    }
+
     public String getStatus() {
         return status;
     }
@@ -101,3 +113,4 @@ public class Appointment {
         this.treatmentId = treatmentId;
     }
 }
+

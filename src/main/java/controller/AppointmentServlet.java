@@ -384,6 +384,14 @@ public class AppointmentServlet extends HttpServlet {
                                 )
                         );
 
+                // NEW: End Time
+                LocalTime appointmentEndTime =
+                        LocalTime.parse(
+                                request.getParameter(
+                                        "appointmentEndTime"
+                                )
+                        );
+
                 String status =
                         request.getParameter("status");
 
@@ -416,6 +424,11 @@ public class AppointmentServlet extends HttpServlet {
 
                 appointment.setAppointmentTime(
                         appointmentTime
+                );
+
+                // NEW: End Time
+                appointment.setAppointmentEndTime(
+                        appointmentEndTime
                 );
 
                 appointment.setStatus(
@@ -468,6 +481,14 @@ public class AppointmentServlet extends HttpServlet {
                             )
                     );
 
+            // NEW: End Time
+            LocalTime appointmentEndTime =
+                    LocalTime.parse(
+                            request.getParameter(
+                                    "appointmentEndTime"
+                            )
+                    );
+
             Appointment appointment =
                     new Appointment();
 
@@ -489,6 +510,11 @@ public class AppointmentServlet extends HttpServlet {
 
             appointment.setAppointmentTime(
                     appointmentTime
+            );
+
+            // NEW: End Time
+            appointment.setAppointmentEndTime(
+                    appointmentEndTime
             );
 
             // Create appointment
